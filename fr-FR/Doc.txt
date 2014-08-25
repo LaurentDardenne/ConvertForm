@@ -1,0 +1,224 @@
+﻿  NAME
+    Convert-Form
+    
+  SYNOPSIS
+    Converti un fichier xxx.Designer.cs en un script PowerShell.
+
+  SYNTAX
+    Convert-Form.ps1 -Source Form1.Designer.cs -Destination Form1.ps1 [-DontShow] [-DontLoad] [-Force]	
+
+  DETAILED DESCRIPTION
+    Ce script permet de convertir un fichier Csharp contenant les déclarations d'une WinForm en un script PowerShell. 
+    La construction d'une fenêtre dans Visual Studio génère un fichier nommé NomDuFichier.Designer.cs.
+    C'est ce fichier qui constitue la source de ce script, on en extrait les lignes de déclaration des composants insérés 
+    sur la fenêtre de votre projet Winform. Si votre projet contient plusieurs Forms, vous devrez exécuter ce script 
+    pour chacune d'entre elles.
+    
+    Si dans Visual Studio vous déclarez des événements spécifiques pour chaque composant, ce script construira une fonction
+    pour chacun de ces événements. Le code Csharp contenu dans le corps de la méthode n'est pas converti.  
+    
+    L'usage de certains composants graphique nécessite le modèle de thread STA, celui-ci ne peut être modifié qu'à l'aide 
+    du cmdlet Invoke-Apartment, disponible dans la distribution de ce script ou avec le projet PSCX 1.2 et supérieure.
+    
+    Il est possible d'exécuter une fenêtre au sein d'un runspace. Pour plus de détails consultez le tutoriel 
+    "La notion de runspace sous PowerShell version 1" disponible le site http://laurent-dardenne.developpez.com/
+
+    Write-Host "`r`n Codes couleur :"
+    Write-Host "`tInformation : Message d'information."
+    Write-Host -noNewLine "`tInformation : ";Write-Host "opération réussie." -f Green
+    Write-Host -noNewLine "`tInformation : ";Write-Host "opération en échec" -f DarkYellow 
+    Write-Host -noNewLine "`tErreur      : ";Write-Host "non-bloquante." -f Yellow 
+    Write-Host -noNewLine "`tErreur      : ";Write-Host "grave." -f red 
+
+
+  SYSTEM REQUIREMENTS
+    Scripts :
+            PackageConvert-Form.ps1
+            PackageScripts.ps1
+            APIWindows.ps1   (-HideConsole)
+            New-Runspace.ps1 (-InvokeInRunspace)  
+                PackageWinform.ps1 (optionnel)
+    Programme 
+            Resgen.exe (SDK .NET)
+            PSInvokeApartment.dll (-STA) (cmdlet Invoke-Apartment nécessaire pour PowerShell  V1)
+            Visual-Studio Express ou supèrieure (optionnel) 
+    
+  PARAMETERS
+    -Source <String>
+      Nom du fichier C# à convertir.
+      Ne supporte pas le globbing (*, ?, [abc], etc)
+	    Le chemin peut être relatif au drive courant.
+	    
+      Required?         True
+      Position?         1
+      Default value     <required>
+      Accept pipeline?  False
+      Accept wildcards? False
+
+    -Destination <String>
+      Nom du fichier généré. On crée un nouveau fichier contenant un script PowerShell.
+      Ne supporte pas le globbing (*, ?, [abc], etc).
+      Le chemin peut être relatif au drive courant. 
+      Si ce paramètre n'est pas précisé on construit le nom du fichier généré de la façon suivante :
+       ($Source.FullPathName)\($Source.FileName).ps1
+
+      Required?         False
+      Position?          2
+      Default value     SourcePath\SourceNameWithoutExtension.ps1
+      Accept pipeline?  False
+      Accept wildcards? False
+			
+    -AddInitialize <switch>
+      Insère l'appel préalable au script APIWindows.ps1 contenant les fonctions Hide-PSWindow et Show-PsWindow.     
+      ATTENTION si vous ne précisez pas ce switch, mais précisez le switch -HideConsole, vous devrez au préalable 
+      charger en dot source le fichier APIWindows.ps1
+        . .\APIWindows.ps1; .\MaForm.ps1
+      Le switch -HideConsole doit être également précisé pour activer cette insertion. 
+
+      Required?         False
+      Position?         named
+      Default value     False
+      Accept pipeline?  False
+      Accept wildcards? False			
+
+    -DontLoad <switch>
+      Spécifie de ne pas insérer, dans le fichier généré, les appels aux assemblies Winform, etc.
+
+      C'est par exemple le cas d'une fenêtre secondaire n'utilisant pas d'assemblies spécifique (cas le plus probable)
+      Dans ce cas l’usage du paramètre –DontShow est recommandé car c’est vous qui déciderez quand afficher ces 
+      fenêtres secondaires. Vous devrez donc modifier le script d'appel de la fenêtre principale afin qu’il prenne 
+      en charge la création, l'affichage et la destruction des fenêtres secondaires.
+
+      Required?         False
+      Position?         named
+      Default value     False
+      Accept pipeline?  False
+      Accept wildcards? False			
+
+    -DontShow <switch>
+      Indique de ne pas insérer à la fin du script PS1 généré l'appel à la méthode ShowDialog().
+      Dans ce cas on n'insère pas d'appel à `$Form.Dispose(), ni à Show-PSWindow.
+      cf. -HideConsole 
+
+      Required?         False
+      Position?         named
+      Default value     False
+      Accept pipeline?  False
+      Accept wildcards? False			
+
+    -Force <switch>
+      Si le fichier Destination existe il est écrasé sans demande de confirmation. 
+      
+      Par défaut si vous répondez "Oui" à la question : 
+       "Le fichier de destination existe déjà, voulez-vous le remplacer ?" 
+      le fichier existant est écrasé.
+      Si vous répondez "Non" le script s'arrête sur un avertissement, le fichier destination 
+      n'est pas modifié.
+      
+      Dans tous les cas si le fichier est protégé en écriture ou verrouillé par un 
+      autre programme l'opération échoue.
+
+     Note: 
+      Après avoir mis à jour votre projet Winform dans Visual Studio, ce qui est souvent le cas, car on ne crée pas 
+      une interface graphique en une seule opération, et qu'en suite vous convertissez
+      la nouvelle version du fichier Designer.cs, veillez à ne pas préciser ce switch.
+      Ainsi vous n'écraserez pas le script existant que vous avez modifié ou alors précisez un nom de fichier différent.
+      Pour reporter les modifications du nouveau script dans l'ancien script, l'outil Winmerge vous facilitera la tâche.  
+
+      Required?         False
+      Position?         named
+      Default value     False
+      Accept pipeline?  False
+      Accept wildcards? False			
+
+    -HideConsole <switch>
+      Spécifie l'insertion des appels à Hide-PSWindow dans le code du gestionnaire d'événement `$Form1.Add_Shown,
+      et l'appel à Show-PSWindow après l'appel à `$Form1.Dispose().
+      Ainsi au démarrage de la form on cache la console et on la réaffiche une fois la forme close.
+
+      Required?         False
+      Position?         named
+      Default value     False
+      Accept pipeline?  False
+      Accept wildcards? False			
+
+    -InvokeInRunspace <switch>
+      Indique l'insertion d'un code de création et d'initialisation d'un runspace, dans lequel on exécute l'appel à 
+      ShowDialog de la form déclarée dans le fichier généré.  
+      
+      Exemple de code généré :
+         $RSShowDialog=New-RunSpace {$Form1.ShowDialog()} $configurationRS
+        
+      Required?         False
+      Position?         named
+      Default value     False
+      Accept pipeline?  False
+      Accept wildcards? False
+      
+    -passThru <switch>
+      Passe l'objet fichier récemment créé par ce script le long du pipeline. 
+      Par défaut, ce script ne passe aucun objet le long du pipeline.      
+
+      Required?         False
+      Position?         named
+      Default value     False
+      Accept pipeline?  False
+      Accept wildcards? False			
+    
+    -STA <switch>
+      Autorise les composants nécessitant le modèle de thread STA.
+      Dans ce cas on insère dans le script généré, un test de contrôle sur l'état de cloisonnement du thread courant.
+      Beta (en cours de test).
+      Nécessite sous PowerShell v1, la présence du cmdlet Invoke-Apartment.
+      Nécessite sous PowerShell v2, d'exécuter PowerShell en précisant le switch -STA.
+
+      Required?         False
+      Position?         named
+      Default value     False
+      Accept pipeline?  False
+      Accept wildcards? False			
+  
+  INPUT TYPE
+   N/A
+    	
+  RETURN TYPE
+    System.IO.FileInfo, SI le switch -passThru est précisé, sinon ne renvoi aucune donnée. 
+	
+  ERROR MESSAGE
+   http://projets.developpez.com/wiki/add-lib/Convert-Form#Code-couleur-des-messages-derreur
+
+  NOTES
+  Site : http://projets.developpez.com/wiki/add-lib/Convert-Form 
+    
+
+    -------------------------- EXAMPLE 1 --------------------------
+     #Précise des noms de chemin complet
+    $PathOfForm ="$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
+    .\Convert-Form $PathOfForm C:\Temp\FrmTest.ps1 
+    
+    -------------------------- EXAMPLE 2 --------------------------
+     #Lit le fichier source et écrit le fichier cible dans le répertoire courant.
+     #Pas de demande confirmation si le fichier existe déjà
+     #Le nom du fichier cible est égal à :
+     # "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1
+    cd "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\ 
+    .\Convert-Form Form1.Designer.cs -Force
+    
+    -------------------------- EXAMPLE 3 --------------------------
+     #Converti la form en lui ajoutant le code cachant la fenêtre de la console 
+     # durant le temps d'exécution de la fenêtre.
+     #On ajoute également l'appel au script APiWindows.ps1. 
+    .\Convert-Form Form1.Designer.cs FrmTest.ps1 -HideConsole -AddInitialize
+
+    -------------------------- EXAMPLE 3 --------------------------
+     #Autorise la conversion des composants utilisant le model de thread STA
+    .\Convert-Form Form1.Designer.cs FrmTest.ps1 -STA
+
+    -------------------------- EXAMPLE 4 --------------------------
+     #Génére l'appel à ShowDialog au sein d'un runspace.
+     #On émet le nom du fichier généré dans le pipeline afin de lui 
+     #ajouter une signature Authenticode 
+    .\Convert-Form Form1.Designer.cs FrmTest.ps1 -$InvokeInRunspace -Pass|Signe
+    
+    Afficher la documentaion page par page :
+     .\Convert-From|More

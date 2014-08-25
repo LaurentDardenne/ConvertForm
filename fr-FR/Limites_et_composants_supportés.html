@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<title>Limites et composants supportés</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<style>
+body { font:80% Verdana,Tahoma,Arial,sans-serif; }
+h1, h2, h3, h4 {  font-family: "Trebuchet MS",Georgia,"Times New Roman",serif; }
+ul.toc { padding: 4px; margin-left: 0; }
+ul.toc li { list-style-type:none; }
+ul.toc li.heading2 { margin-left: 1em; }
+ul.toc li.heading3 { margin-left: 2em; }
+</style>
+</head>
+<body>
+<h1 id="Limites-et-composants-supportés">Limites et composants supportés<a href="#Limites-et-composants-supportés" class="wiki-anchor">&para;</a></h1>
+
+
+	<ul class="toc"><li class="heading1"><a href="#Limites-et-composants-supportés">Limites et composants supportés</a></li>
+<li class="heading1"><a href="#Composants-supportés">Composants supportés</a></li>
+<li class="heading1"><a href="#Composants-en-erreur">Composants en erreur</a></li>
+<li class="heading1"><a href="#Limitations">Limitations</a></li>
+<li class="heading1"><a href="#Informations">Informations</a></li>
+</ul>
+
+
+	<h1 id="Composants-supportés">Composants supportés<a href="#Composants-supportés" class="wiki-anchor">&para;</a></h1>
+
+
+	<p>Composants ne fonctionnant pas nativement sous PowerShell V1.0 :  <br />
+-System.Windows.Forms.WebBrowser : <a href="http://blogs.msdn.com/powershell/archive/2007/03/23/thread-apartmentstate-and-powershell-execution-thread.aspx" class="external">Limite de PowerShell v1.0</a><br />
+-Le composant BackGroundWorker même raison que pour le WebBrowser. Bien que sa conversion/création ne pose pas de pb.<br />
+ Il ne dispose pas de RunSpace pour exécuter des commandes PS. <br />
+ En v1 utilisez à la place un 'job'.<br />
+ voir <a href="http://www.leeholmes.com/blog/RealtimeSyntaxHighlightingInYourPowerShellConsole.aspx" class="external">Background Jobs and PowerShell</a></p>
+
+
+	<p>Lors de la conversion vous pouvez utiliser le switch -STA, ce qui forcera le traitment à passer outre ce comportement. En revanche vous devez <a href="Convert-Form.html" class="wiki-page">utiliser le cmdlet Invoke-Apartment</a> pour exécuter le code généré.</p>
+
+
+	<h1 id="Composants-en-erreur">Composants en erreur<a href="#Composants-en-erreur" class="wiki-anchor">&para;</a></h1>
+
+
+	<p>-TableLayoutPanel la création imbriquée de composants n'est pas encore supportée<br />
+-La reconnaissance de certaines combinaisons de caractères n'est pas prise en compte.</p>
+
+
+	<h1 id="Limitations">Limitations<a href="#Limitations" class="wiki-anchor">&para;</a></h1>
+
+
+-L'accessibilité n'est pas supportée (testé)<br />
+-Le databinding n'est pas supporté   (non-testé)<br />
+-La gestion de références d'assemblies autres que Winform, Drawing,Resources n'est pas supporté (testé).<br />
+ voir dans un fichier projet C# Visual Studio, le noeud (fichier XML) :<br />
+<pre>
+  &lt;ItemGroup&gt;
+     &lt;Reference Include="CrystalDecisions.CrystalReports.Engine, Version= ...
+</pre>
+
+	<h1 id="Informations">Informations<a href="#Informations" class="wiki-anchor">&para;</a></h1>
+
+
+	<p>L'opérateur d'expression régulière <em> -Match</em> n'est pas sensible à la casse lors de la recherche.<br />
+Pensez à nommer chaque composants Winform d'après le nom de votre projet.<br />
+Ex: FrmMainProjet1,FrmSecondaireProjet1</p>
+
+
+	<p>Sous Powershell la déclaration simultanée des événements Activated et DeActivated, réalisée pour VisualStudio, peut amener le formulaire "à boucler". Idem pour la déclaration de l'événement Paint, de la déclaration des événements de la souris, etc.<br />
+Une gestion correcte du code de ces gestionnaires, en lieu et place d'un appel à MessageBox, réglera le problème.</p>
+
+
+	<p>Toutes les fonctions (packages) complémentaires sont chargées en dot source, c'est à dire dans la portée du script. En fin d'exécution elles sont donc automatiquement libérées du provider de variables.</p>
+</body>
+</html>

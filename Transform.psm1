@@ -102,7 +102,11 @@ function Add-ManageRessources{
   # 2 test d'existence du fichier
   # 3 récupération dans une hastable des ressources de la Winform
 
-# Here-string    
+# Here-string   
+ param (
+  [string] $SourceName
+ )
+ 
 @"
 
 function Get-ScriptDirectory
@@ -346,7 +350,7 @@ function New-RessourcesFile{
    { write-host "Le programme générant les ressources est introuvable : $Resgen" -F DarkYellow }
   else
    {
-	 $SrcResx = Join-Path $script:SourcePath ($ProjectPaths.SourceName+".resx")
+	 $SrcResx = Join-Path $ProjectPaths.SourcePath ($ProjectPaths.SourceName+".resx")
 	 if ( !(Test-Path $SrcResx))
 	  { Write-Host "Le fichier de ressources est introuvable : $SrcResx" -F DarkYellow }
 	 else

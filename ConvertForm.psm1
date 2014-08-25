@@ -91,7 +91,7 @@ if ($Destination -ne [String]::Empty)
   $ProjectPaths=New-FilesName $psScriptRoot $SourceFI  $DestinationPathInfo
 }
 else 
-{  $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $Destination}
+{ $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $Destination}
      
 
  #Teste s'il n'y a pas de conflit dans les switchs
@@ -266,7 +266,7 @@ for ($i=0; $i -le $Components.Count-1 ;$i++)
      if ($crMgr.success){
        Write-Debug "IsUsedResources : True"
        $IsUsedResources = $True
-       $Components[$i]=Add-ManageRessources
+       $Components[$i]=Add-ManageRessources  $ProjectPaths.Sourcename
        continue
      }
    }
@@ -326,15 +326,13 @@ if ($IsUsedResources -eq $true)
  { New-RessourcesFile $ProjectPaths }
 
 If($DontLoad -eq $False)
- {
+{
    Write-Debug "[Ajout Code] chargement des assemblies"
    $Assemblies=@("System.Windows.Forms","System.Drawing")
-   if ($IsUsedResources)
-    {$Assemblies +="System.Resources"}
-     
-	 [void]$LinesNewScript.Add("# Chargement des assemblies externes")
-	 Add-LoadAssembly $LinesNewScript $Assemblies
- }
+   
+   [void]$LinesNewScript.Add("# Chargement des assemblies externes")
+   Add-LoadAssembly $LinesNewScript $Assemblies
+}
 
 Write-Debug "Début de la troisième analyse"
 $progress=0
@@ -437,7 +435,10 @@ foreach ($Ligne in $Components)
         [void]$LinesNewScript.Add("`$$FormName = new-object System.Windows.Forms.form")
          #On ajoute les possibles ErrorProvider
          if ($ErrorProviders.Count -gt 0)
-          { [void]$LinesNewScript.Add( ($ErrorProviders|% {Add-ErrorProvider $_ $FormName} ) ) }
+         { 
+            [string[]]$S=$ErrorProviders|% {Add-ErrorProvider $_ $FormName}
+            [void]$LinesNewScript.Add("$S")
+         } 
          # Il n'existe qu'une ligne de ce type
         Continue 
        }

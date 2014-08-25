@@ -16,16 +16,16 @@ function Convert-DictionnaryEntry($Parameters)
 function Backup-Collection($Collection,$Message)
 { #Sauvegarde dans un fichier temporaire unique le contenu de la collection de lignes en cours d'analyse
   if ( $DebugPreference -ne "SilentlyContinue") 
-   { 
-     if  ($Collection -is  [System.Collections.IEnumerable])
-     {
-       $TempFile = [IO.Path]::GetTempFileName()
-       $Collection|Set-Content $TempFile
-       Write-Debug $Message
-       Write-Debug "Sauvegarde dans le fichier temporaire : $TempFile"
-     } 
-    else {Write-Warning "Backup-Collection : La variable `$Collection n'est pas une collection d'objet."} 
-   }
+  { 
+   if  ($Collection -is  [System.Collections.IEnumerable])
+   {
+     $TempFile = [IO.Path]::GetTempFileName()
+     $Collection|Set-Content $TempFile
+     Write-Debug $Message
+     Write-Debug "Sauvegarde dans le fichier temporaire : $TempFile"
+   } 
+  else {Write-Warning "Backup-Collection : La variable `$Collection n'est pas une collection d'objet."} 
+  }
 }
 
 Function Add-LoadAssembly{
@@ -150,25 +150,25 @@ function Select-ParameterEnumeration([String]$NomEnumeration, [String] $Parametr
    
    #Une seule valeur, on la convertie
   if ($NbValeur -eq 1 )
-   { return Convert-Enum $Parametres} 
+  { return Convert-Enum $Parametres} 
 
    #Valeur 1 :
    #         ((Nom.Enumeration)((Nom.Enumeration.VALEUR
     # recherche (et capture) en fin de chaîne un mot précédé d'un point lui-même précédé de n'importe quel caractères
- $Valeurs[0]= ($Valeurs[0] -replace "^.*\.(.*)$", '$1').Trim()
+  $Valeurs[0]= ($Valeurs[0] -replace "^.*\.(.*)$", '$1').Trim()
  
    #Valeur 2..n :
    #     Nom.Enumeration.VALEUR)    
    # recherche (et capture) en fin de chaîne une parenthèse précédée de caractères uniquement précédés d'un point lui-même précédé de n'importe quel caractères
- for ($i=1;$i -le $NbValeur-2;$i++)
+  for ($i=1;$i -le $NbValeur-2;$i++)
   { $Valeurs[$i]= ($Valeurs[$i] -replace "^.*\.([a-zA-Z]*)\)$", '$1').Trim() }
 
    #Dernière valeur  :
    #         Nom.Enumeration.VALEUR))  
    # ou      Nom.Enumeration.VALEUR)))  
    # recherche (et capture) en fin de chaîne deux parenthèses précédées de caractères ou de chiffre uniquement précédés d'un point lui-même précédé de n'importe quel caractères
- $Valeurs[$NbValeur-1]= ($Valeurs[$NbValeur-1] -replace "^.*\.([a-zA-Z0-9]+)\)+$", '$1').Trim()
- Return "[$NomEnumeration]`"{0}`"" -F ([string]::join(",", $Valeurs))
+  $Valeurs[$NbValeur-1]= ($Valeurs[$NbValeur-1] -replace "^.*\.([a-zA-Z0-9]+)\)+$", '$1').Trim()
+  return "[$NomEnumeration]`"{0}`"" -F ([string]::join(",", $Valeurs))
 }
 
 function Select-PropertyFONT([System.Text.RegularExpressions.Match] $MatchStr)
@@ -193,7 +193,7 @@ function Select-PropertyFONT([System.Text.RegularExpressions.Match] $MatchStr)
   { 
     {$_ -eq 3} {  #Est-ce un paramètre de type System.Drawing.GraphicsUnit ?
                  if ( $Parametres[2].Contains("System.Drawing.GraphicsUnit") )
-         		   {$Parametres[2]=Convert-Enum $Parametres[2]}
+         		 {$Parametres[2]=Convert-Enum $Parametres[2]}
          		   #si non c'est donc un paramètre de type System.Drawing.FontStyle ?
        			 else { $Parametres[2]=Select-ParameterEnumeration "System.Drawing.FontStyle" $Parametres[2] }
      		   }
@@ -260,7 +260,7 @@ function Select-ParameterRGB([System.Text.RegularExpressions.Match] $MatchStr)
 	  # On récupére uniquement la valeur du paramètre : ((int)(((byte)(192))))
 	  #Recherche ( et capture) en début de chaine une suite de caractère suivis d'une parenthèse suivi de 
 	  #un ou plusieurs chiffres suivis par une ou plusieurs parenthèses
-   { $Parametres[$i]=$Parametres[$i]  -replace "^(.*)\(([0-9]+)\)+", '$2' }
+  { $Parametres[$i]=$Parametres[$i]  -replace "^(.*)\(([0-9]+)\)+", '$2' }
    
   return $Parametres
 }
@@ -270,9 +270,7 @@ function ConvertTo-StringBuilder([System.Text.RegularExpressions.Match] $MatchSt
    # $NumerosOrdonnes : Contient les numéros des groupes à insérer dans la nouvelle chaîne
    $Result=new-object System.Text.StringBuilder
    foreach ($Num in $NumerosOrdonnes)
-    {
-      [void]$Result.Append($MatchStr.Groups[$Num].value)
-    }
+   { [void]$Result.Append($MatchStr.Groups[$Num].value) }
    return $Result
  }
  
@@ -347,22 +345,22 @@ function New-RessourcesFile{
    #todo error ou warning ?
   $Resgen="$psScriptRoot\ResGen.exe" 
   if ( !(Test-Path $Resgen))
-   { write-host "Le programme générant les ressources est introuvable : $Resgen" -F DarkYellow }
+  { write-host "Le programme générant les ressources est introuvable : $Resgen" -F DarkYellow }
   else
-   {
+  {
 	 $SrcResx = Join-Path $ProjectPaths.SourcePath ($ProjectPaths.SourceName+".resx")
 	 if ( !(Test-Path $SrcResx))
-	  { Write-Host "Le fichier de ressources est introuvable : $SrcResx" -F DarkYellow }
+	 { Write-Host "Le fichier de ressources est introuvable : $SrcResx" -F DarkYellow }
 	 else
-	  {
+	 {
 	   $DestResx = Join-Path $ProjectPaths.DestinationPath ($ProjectPaths.SourceName+".resources")
 	   $Log=Join-Path $ProjectPaths.DestinationPath ("$($ProjectPaths.DestinationName).log")
 	   if ((Test-Path $Log))
-	     { 
-	       trap  
-            {Write-Warning "Suppression du fichier impossible : $Log"; Continue}
-	       Remove-Item $Log 
-	     }
+	   { 
+	      trap  
+          {Write-Warning "Suppression du fichier impossible : $Log"; Continue}
+	      Remove-Item $Log 
+	   }
 	     #Message de debug
        "Resgen","SrcResx","DestResx","Log"|Gv |% {Write-Debug ("{0}={1}" -F $_.Name,$_.Value)}
 	 
@@ -370,10 +368,11 @@ function New-RessourcesFile{
 	   $ResultExec=.$Resgen $SrcResx $DestResx 2>&1
 	   $ResultExec|Out-File -width 999 $Log
 	   if ($LastExitCode -ne 0)
-	    { Write-Warning "Erreur($LastExitCode) lors de la génération du fichier de ressources . Consultez le fichier $log"}
-	   else { Write-Host "Génération du fichier de ressources $DestResx`r`n" -F Green }
-	  }
-   } 
+	   { Write-Warning "Erreur($LastExitCode) lors de la génération du fichier de ressources . Consultez le fichier $log" }
+	   else 
+       { Write-Verbose "Génération du fichier de ressources $DestResx`r`n" }
+	 }
+  } 
 }
 
 function Add-ErrorProvider([String] $ComponentName, [String] $FormName)
@@ -400,7 +399,7 @@ function Add-TestApartmentState {
 
  #Utiliser le paramètre -STA.
 if ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne [System.Threading.ApartmentState]::STA )
- {Throw "Le script courant nécessite que le modèle du thread actuel soit [System.Threading.ApartmentState]::STA (Single Thread Apartment)." }
+{Throw "Le script courant nécessite que le modèle du thread actuel soit [System.Threading.ApartmentState]::STA (Single Thread Apartment)." }
 
 "@
 } #Add-TestApartmentState

@@ -5,6 +5,8 @@
 
 #todo la génération de code peut utiliser des string localisées.
 
+Import-LocalizedData -BindingVariable TransformMsgs -Filename TransformLocalizedData.psd1 -EA Stop
+
  #Création du header
 ."$psScriptRoot\Tools\Add-Header.ps1"
 
@@ -15,16 +17,12 @@ function Convert-DictionnaryEntry($Parameters)
 
 function Backup-Collection($Collection,$Message)
 { #Sauvegarde dans un fichier temporaire unique le contenu de la collection de lignes en cours d'analyse
-  if ( $DebugPreference -ne "SilentlyContinue") 
+  if ( $DebugPreference -ne 'SilentlyContinue') 
   { 
-   if  ($Collection -is  [System.Collections.IEnumerable])
-   {
      $TempFile = [IO.Path]::GetTempFileName()
      $Collection|Set-Content $TempFile
      Write-Debug $Message
      Write-Debug "Sauvegarde dans le fichier temporaire : $TempFile"
-   } 
-  else {Write-Warning "Backup-Collection : La variable `$Collection n'est pas une collection d'objet."} 
   }
 }
 
@@ -35,16 +33,17 @@ Function Add-LoadAssembly{
  )
  #Charge une liste d'assemblies .NET 
  #On les suppose présent dans le GAC
- #Add-Type -Path "FullPath\filename.dll" 
+ #todo-Vnext : ceux n'étant pas dans le GAC :   Add-Type -Path 'FullPath\filename.dll' 
  foreach ($Assembly in $Assemblies)
  { [void]$Liste.Add("Add-Type -AssemblyName $Assembly") }
- [void]$Liste.Add("")
+ [void]$Liste.Add('')
 }
 
 Function Add-EventComponent([String] $ComponentName, [String] $EventName)
 { #Crée et ajoute un événement d'un composant.
   #Par défaut le scriptbloc généré affiche un message d'information
 
+   #todo localisation
   $UnderConstruction = "[void][System.Windows.Forms.MessageBox]::Show(`"L'évènement $ComponentName.Add_$EventName n'est pas implémenté.`")"
    #La syntaxe d'ajout d'un délégué est : Add_NomEvénément 
    # où le nom de l'événement est celui du SDK .NET
@@ -60,25 +59,29 @@ $EvtHdl
 "@
 }
 
-function Add-SpecialEventForm([String] $FormName)
-{ # Ajoute des méthodes d'évènement spécifiques à la forme principale
+function Add-SpecialEventForm{
+ param(
+  [String] $FormName,
+  [switch] $HideConsole
+ )
+  # Ajoute des méthodes d'évènement spécifiques à la forme principale
   #FormClosing
     # Permet à l'utilisateur de : 
     #   -déterminer la cause de la fermeture
     #   -autoriser ou non la fermeture
 
- $Entête = "function OnFormClosing_{0}{{" -f ($FormName)
- $Close  = "`${0}.Add_FormClosing( {{ OnFormClosing_{0}}} )" -f ($FormName)
+ $Entête = 'function OnFormClosing_{0}{{' -F $FormName
+ $Close  = '${0}.Add_FormClosing( {{ OnFormClosing_{0}}} )' -F $FormName
 
-  #FormShown
  $CallHidefnct=""
+   #On affiche la fenêtre, mais on cache la console 
  If ($HideConsole)
-   #On affiche la fenêtre mais on cache la console 
-  {$CallHidefnct="Hide-PSWindow;"}
+  {$CallHidefnct="Hide-Window;"}
    #Replace au premier plan la fenêtre en l'activant.
    # Form1.topmost=$true est inopérant
- $Shown  = "`${0}.Add_Shown({{{1}`${0}.Activate()}})" -f ($FormName,$CallHidefnct)
+ $Shown  = '${0}.Add_Shown({{{1}${0}.Activate()}})' -F $FormName,$CallHidefnct
 
+ #todo localisation
 # Here-string  
 @"
 $Entête 
@@ -110,8 +113,7 @@ function Add-ManageRessources{
 @"
 
 function Get-ScriptDirectory
-{  #Renvoi le nom du répertoire d'un script parent, celui appelé sur la ligne de commande.
-   # By J.Snover
+{ #Return the directory name of this script
   `$Invocation = (Get-Variable MyInvocation -Scope 1).Value
   Split-Path `$Invocation.MyCommand.Path
 }
@@ -120,12 +122,12 @@ function Get-ScriptDirectory
 `$RessourcesPath= Join-Path `$ScriptPath "$SourceName.resources"
 if ( !(Test-Path `$RessourcesPath))
  {
-  Write-Warning "Le fichier de ressources n'existe pas :``n``r `$RessourcesPath"
-  break; # Sinon le script est en exception qq lignes plus tard
+  Write-Error `"$($TransformMsgs.ManageResourcesError)`"
+  break; 
  }
 
   #Gestion du fichier des ressources
-`$Reader = new-Object System.Resources.ResourceReader("`$RessourcesPath")
+`$Reader = new-Object System.Resources.ResourceReader(`$RessourcesPath)
 `$Ressources=@{}
 `$Reader.GetEnumerator()|% {`$Ressources.(`$_.Name)=`$_.value}
  
@@ -138,14 +140,14 @@ function Convert-Enum([String] $Enumeration)
   # un.deux.trois en [un.deux]::trois
  $Enumeration = $Enumeration.trim()
   # recherche (et capture) en fin de chaîne un mot précédé d'un point lui-même précédé de n'importe quel caractères
- $Enumeration -replace "(.*)\.(\w+)$", '[$1]::$2'
+ $Enumeration -replace '(.*)\.(\w+)$', '[$1]::$2'
 }
 
 function Select-ParameterEnumeration([String]$NomEnumeration, [String] $Parametres)
 { #Voir le fichier  "..\Documentations\Analyse des propriétés.txt"
  #Gére les propriétés Font et Anchor
 
-  $Valeurs= $Parametres.Split("|")
+  $Valeurs= $Parametres.Split('|')
   $NbValeur = $Valeurs.Count
    
    #Une seule valeur, on la convertie
@@ -155,20 +157,20 @@ function Select-ParameterEnumeration([String]$NomEnumeration, [String] $Parametr
    #Valeur 1 :
    #         ((Nom.Enumeration)((Nom.Enumeration.VALEUR
     # recherche (et capture) en fin de chaîne un mot précédé d'un point lui-même précédé de n'importe quel caractères
-  $Valeurs[0]= ($Valeurs[0] -replace "^.*\.(.*)$", '$1').Trim()
+  $Valeurs[0]= ($Valeurs[0] -replace '^.*\.(.*)$', '$1').Trim()
  
    #Valeur 2..n :
    #     Nom.Enumeration.VALEUR)    
    # recherche (et capture) en fin de chaîne une parenthèse précédée de caractères uniquement précédés d'un point lui-même précédé de n'importe quel caractères
   for ($i=1;$i -le $NbValeur-2;$i++)
-  { $Valeurs[$i]= ($Valeurs[$i] -replace "^.*\.([a-zA-Z]*)\)$", '$1').Trim() }
+  { $Valeurs[$i]= ($Valeurs[$i] -replace '^.*\.([a-zA-Z]*)\)$', '$1').Trim() }
 
    #Dernière valeur  :
    #         Nom.Enumeration.VALEUR))  
    # ou      Nom.Enumeration.VALEUR)))  
    # recherche (et capture) en fin de chaîne deux parenthèses précédées de caractères ou de chiffre uniquement précédés d'un point lui-même précédé de n'importe quel caractères
-  $Valeurs[$NbValeur-1]= ($Valeurs[$NbValeur-1] -replace "^.*\.([a-zA-Z0-9]+)\)+$", '$1').Trim()
-  return "[$NomEnumeration]`"{0}`"" -F ([string]::join(",", $Valeurs))
+  $Valeurs[$NbValeur-1]= ($Valeurs[$NbValeur-1] -replace '^.*\.([a-zA-Z0-9]+)\)+$', '$1').Trim()
+  return "[$NomEnumeration]`"{0}`"" -F ([string]::join(',', $Valeurs))
 }
 
 function Select-PropertyFONT([System.Text.RegularExpressions.Match] $MatchStr)
@@ -181,38 +183,38 @@ function Select-PropertyFONT([System.Text.RegularExpressions.Match] $MatchStr)
 	#  3- "Arial Black", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0))
 
     #Récupère les paramètres du constructeur
-  $Parametres= [Regex]::Split($MatchStr.Groups[3].value,",")
+  $Parametres= [Regex]::Split($MatchStr.Groups[3].value,',')
     #Le premier est tjr le nom de la fonte de caractère
     #Le second est tjr la taille de la fonte de caractère dans ce cas on supprime le caractère 'F' 
     #indiquant un type double
-  $Parametres[1]=$Parametres[1] -replace "F",''
+  $Parametres[1]=$Parametres[1] -replace 'F',''
   
    #Teste les différentes signatures de constructeurs
    #On parcourt toute la liste du nombre de paramètre possibles, les uns à la suite des autres.
   Switch ($Parametres.count)
   { 
     {$_ -eq 3} {  #Est-ce un paramètre de type System.Drawing.GraphicsUnit ?
-                 if ( $Parametres[2].Contains("System.Drawing.GraphicsUnit") )
+                 if ( $Parametres[2].Contains('System.Drawing.GraphicsUnit') )
          		 {$Parametres[2]=Convert-Enum $Parametres[2]}
          		   #si non c'est donc un paramètre de type System.Drawing.FontStyle ?
-       			 else { $Parametres[2]=Select-ParameterEnumeration "System.Drawing.FontStyle" $Parametres[2] }
+       			 else { $Parametres[2]=Select-ParameterEnumeration 'System.Drawing.FontStyle' $Parametres[2] }
      		   }
 
     {$_ -ge 4} {  #Le troisième est tjr de type FontStyle
    	   			  #Le quatrième est tjr de type GraphicsUnit
-                 $Parametres[2]= Select-ParameterEnumeration "System.Drawing.FontStyle" $Parametres[2]
+                 $Parametres[2]= Select-ParameterEnumeration 'System.Drawing.FontStyle' $Parametres[2]
                  $Parametres[3]=Convert-Enum $Parametres[3]
                }
                  
     {$_ -ge 5} {  #On récupére uniquement la valeur du paramètre : ((byte)(123))
                   # Un ou plusieurs chiffres :                        [0-9]+
-                 $Parametres[4]=$Parametres[4] -replace "\(\(byte\)\(([0-9]+)\)\)", '$1' 
+                 $Parametres[4]=$Parametres[4] -replace '\(\(byte\)\(([0-9]+)\)\)', '$1' 
                }
 
     #6 Le sixième (true - false) est traité par la suite dans le script principal
 
                   #Pb :/
-    {$_ -ge 7} { throw ("Cas imprévu : {0}" -f ($MatchStr.Groups[3].value)) }
+    {$_ -ge 7} { throw ('Unexpected case : {0}' -f ($MatchStr.Groups[3].value)) }
   }
   
   return $Parametres
@@ -228,7 +230,7 @@ function Select-PropertyANCHOR([System.Text.RegularExpressions.Match] $MatchStr)
 	#  3- (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)| System.Windows.Forms.AnchorStyles.Left)| System.Windows.Forms.AnchorStyles.Right));
 
  #Peut être codé dans l'appelant mais cela documente un peu plus
- return Select-ParameterEnumeration "System.Windows.Forms.AnchorStyles" $MatchStr.Groups[3].value
+ return Select-ParameterEnumeration 'System.Windows.Forms.AnchorStyles' $MatchStr.Groups[3].value
 }
 
 function Select-PropertyShortcutKeys([System.Text.RegularExpressions.Match] $MatchStr)
@@ -242,7 +244,7 @@ function Select-PropertyShortcutKeys([System.Text.RegularExpressions.Match] $Mat
 	#  3- ((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.A)));
 
  #Peut être codé dans l'appelant mais cela documente un peu plus
- return Select-ParameterEnumeration "System.Windows.Forms.Keys" $MatchStr.Groups[3].value
+ return Select-ParameterEnumeration 'System.Windows.Forms.Keys' $MatchStr.Groups[3].value
 }
 
 function Select-ParameterRGB([System.Text.RegularExpressions.Match] $MatchStr)
@@ -255,12 +257,12 @@ function Select-ParameterRGB([System.Text.RegularExpressions.Match] $MatchStr)
 	#  3- ((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192))))
 	 
     #Récupère les 3 paramètres
-  $Parametres= [Regex]::Split($MatchStr.Groups[3].value,",")
+  $Parametres= [Regex]::Split($MatchStr.Groups[3].value,',')
   for ($i=0; $i -lt $Parametres.count; $i++)
 	  # On récupére uniquement la valeur du paramètre : ((int)(((byte)(192))))
 	  #Recherche ( et capture) en début de chaine une suite de caractère suivis d'une parenthèse suivi de 
 	  #un ou plusieurs chiffres suivis par une ou plusieurs parenthèses
-  { $Parametres[$i]=$Parametres[$i]  -replace "^(.*)\(([0-9]+)\)+", '$2' }
+  { $Parametres[$i]=$Parametres[$i]  -replace '^(.*)\(([0-9]+)\)+', '$2' }
    
   return $Parametres
 }
@@ -279,7 +281,7 @@ function ConvertTo-Line([System.Text.RegularExpressions.Match] $MatchStr, [Array
 
    #On reconstruit l'intégralité d'un chaîne parsée et transformée
   $Sb=ConvertTo-StringBuilder $MatchStr $NumerosOrdonnes
-  [void]$Sb.Append( [string]::join(",", $Parametres)) 
+  [void]$Sb.Append( [string]::join(',', $Parametres)) 
   return $Sb.ToString()
 }
 
@@ -303,7 +305,7 @@ function New-FilesName{
   $ProjectPaths=@{
      Source=$SourceFI.FullName
      SourcePath = $SourceFI.DirectoryName
-     SourceName = ([System.IO.Path]::GetFilenameWithoutExtension($SourceFI.FullName)) -replace ".designer",''
+     SourceName = ([System.IO.Path]::GetFilenameWithoutExtension($SourceFI.FullName)) -replace '.designer',''
   }
  
   if ($Destination -eq [String]::Empty)
@@ -317,8 +319,8 @@ function New-FilesName{
      $ProjectPaths.Destination=$Destination.GetFileName()
      if ([System.IO.Path]::GetExtension($ProjectPaths.Destination) -eq [string]::Empty)
      {
-        $ProjectPaths.Destination=[System.IO.Path]::ChangeExtension($ProjectPaths.Destination,".ps1")
-        Write-Verbose "L'extension .ps1 a été ajouté au nom du fichier Destination."
+        $ProjectPaths.Destination=[System.IO.Path]::ChangeExtension($ProjectPaths.Destination,'.ps1')
+        Write-Verbose $TransformMsgs.AddPSExtension
      }
   }
 
@@ -327,8 +329,8 @@ function New-FilesName{
   $ProjectPaths.DestinationName = ([System.IO.Path]::GetFilenameWithoutExtension($DestinationFi.FullName))
 
   Write-Debug 'BuildFiles ProjectPaths :' ; Convert-DictionnaryEntry $ProjectPaths|Foreach {Write-Debug $_}
-  Write-Verbose "Le fichier source : $($ProjectPaths.Source)"
-  Write-Verbose "Le fichier destination  : $($ProjectPaths.Destination)"
+  Write-Verbose ($TransformMsgs.SourcePath-F $ProjectPaths.Source)
+  Write-Verbose ($TransformMsgs.DestinationPath -F $ProjectPaths.Destination)
   
   $ProjectPaths 
 } #New-FilesName
@@ -339,38 +341,48 @@ function New-RessourcesFile{
   $ProjectPaths
  ) 
   
-  write-Debug "Compile les ressources"
+  Write-Debug 'Compile les ressources'
    #On génére le fichier de ressources
    #todo + versions de resgen ?
-   #todo error ou warning ?
+   #todo : http://blogs.msdn.com/b/visualstudio/archive/2010/06/18/resgen-exe-error-an-attempt-was-made-to-load-a-program-with-an-incorrect-format.aspx
   $Resgen="$psScriptRoot\ResGen.exe" 
   if ( !(Test-Path $Resgen))
-  { write-host "Le programme générant les ressources est introuvable : $Resgen" -F DarkYellow }
+  { Write-Error ($TransformMsgs.ResgenNotFound -F $Resgen) }
   else
   {
-	 $SrcResx = Join-Path $ProjectPaths.SourcePath ($ProjectPaths.SourceName+".resx")
+	 $SrcResx = Join-Path $ProjectPaths.SourcePath ($ProjectPaths.SourceName+'.resx')
 	 if ( !(Test-Path $SrcResx))
-	 { Write-Host "Le fichier de ressources est introuvable : $SrcResx" -F DarkYellow }
+	 { Write-Error ($TransformMsgs.ResourceFileNotFound -F $SrcResx) }
 	 else
 	 {
-	   $DestResx = Join-Path $ProjectPaths.DestinationPath ($ProjectPaths.SourceName+".resources")
+	   $DestResx = Join-Path $ProjectPaths.DestinationPath ($ProjectPaths.SourceName+'.resources')
 	   $Log=Join-Path $ProjectPaths.DestinationPath ("$($ProjectPaths.DestinationName).log")
+	     #Message de debug
+       'Resgen','SrcResx','DestResx','Log'|
+         Get-Variable |
+         Foreach { Write-Debug ('{0}={1}' -F $_.Name,$_.Value) }
+	 
 	   if ((Test-Path $Log))
 	   { 
-	      trap  
-          {Write-Warning "Suppression du fichier impossible : $Log"; Continue}
-	      Remove-Item $Log 
+	     try{
+	        Remove-Item $Log -EA stop
+         }catch {
+            Write-Warning ($TransformMsgs.FileCannotBeRemoved -F $Log)
+         } 
 	   }
-	     #Message de debug
-       "Resgen","SrcResx","DestResx","Log"|Gv |% {Write-Debug ("{0}={1}" -F $_.Name,$_.Value)}
-	 
+
 	    #Redirige le handle d'erreur vers le handle standard de sortie
 	   $ResultExec=.$Resgen $SrcResx $DestResx 2>&1
-	   $ResultExec|Out-File -width 999 $Log
 	   if ($LastExitCode -ne 0)
-	   { Write-Warning "Erreur($LastExitCode) lors de la génération du fichier de ressources . Consultez le fichier $log" }
+	   { Write-Error ($TransformMsgs.CreateResourceFileError -F $LastExitCode,$log) }
 	   else 
-       { Write-Verbose "Génération du fichier de ressources $DestResx`r`n" }
+       { Write-Verbose ($TransformMsgs.CreateResourceFile -F $DestResx) }
+       
+       try {
+         $ResultExec|Out-File $Log -Width 999
+       }catch {
+          Write-Warning ($TransformMsgs.CreateLogFileError -F $Log)
+       } 
 	 }
   } 
 }
@@ -389,37 +401,86 @@ function Add-ErrorProvider([String] $ComponentName, [String] $FormName)
 `#
 `# $ComponentName
 `#
-$("`${0}.ContainerControl = `${1}" -F $ComponentName,$FormName)  
+$('`${0}.ContainerControl = `${1}' -F $ComponentName,$FormName)
+
 "@
 } #Add-ErrorProvider
 
 function Add-TestApartmentState {
-  #Le switch -STA est détecté,, on ajoute un test sur le modèle du thread courant.
+  #Le switch -STA est indiqué, on ajoute un test sur le modèle du thread courant.
 @"
 
- #Utiliser le paramètre -STA.
+ # The -STA parameter is required
 if ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne [System.Threading.ApartmentState]::STA )
-{Throw "Le script courant nécessite que le modèle du thread actuel soit [System.Threading.ApartmentState]::STA (Single Thread Apartment)." }
+{ Throw "$($TransformMsgs.NeedSTAThreading)" }
 
 "@
 } #Add-TestApartmentState
 
 function Clear-KeyboardBuffer {
  while ($Host.UI.RawUI.KeyAvailable) 
- { $null=$Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown, IncludeKeyUp")}
+ { $null=$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown, IncludeKeyUp')}
 }
 
 function Read-Choice{
+ #On ne localise pas, Anglais par défaut 
   param(
       $Caption, 
       $Message,
-        [ValidateSet("Yes","No")]
-      $DefaultChoice="No"
+        [ValidateSet('Yes','No')]
+      $DefaultChoice='No'
   )
   
   Clear-KeyboardBuffer
-  $Yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes"
-  $No = New-Object System.Management.Automation.Host.ChoiceDescription "&No"
+  $Yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
+  $No = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
   $Choices = [System.Management.Automation.Host.ChoiceDescription[]]($Yes,$No)
-  $Host.UI.PromptForChoice($Caption,$Message,$Choices,([byte]($DefaultChoice -eq "no")))
+  $Host.UI.PromptForChoice($Caption,$Message,$Choices,([byte]($DefaultChoice -eq 'no')))
 }
+
+#Functions Windows
+function Add-Win32FunctionsType {
+@"  
+# Possible value for the nCmdShow parameter
+# SW_HIDE = 0;
+# SW_SHOWNORMAL = 1;
+# SW_NORMAL = 1;
+# SW_SHOWMINIMIZED = 2;
+# SW_SHOWMAXIMIZED = 3;
+# SW_MAXIMIZE = 3;
+# SW_SHOWNOACTIVATE = 4;
+# SW_SHOW = 5;
+# SW_MINIMIZE = 6;
+# SW_SHOWMINNOACTIVE = 7;
+# SW_SHOWNA = 8;
+# SW_RESTORE = 9;
+# SW_SHOWDEFAULT = 10;
+# SW_MAX = 10
+                     
+`$signature = @'
+ [DllImport("user32.dll")]
+ public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+'@
+Add-Type -MemberDefinition `$signature -Name 'Win32ShowWindowAsync' -Namespace Win32Functions
+
+"@
+} #Add-Win32FunctionsType
+
+function Add-Win32FunctionsWrapper {
+@'
+function Show-Window([IntPtr] $WindowHandle=(Get-Process -Id $pid).MainWindowHandle){ 
+ #Displays in the foreground, the window with the handle $WindowHandle   
+   $SW_SHOWNORMAL = 1
+   $null=[Win32Functions.Win32ShowWindowAsync]::ShowWindowAsync($WindowHandle,$SW_SHOWNORMAL) 
+}
+
+function Hide-Window([IntPtr] $WindowHandle=(Get-Process –id $pid).MainWindowHandle) {
+ #Hide the window with the handle WindowHandle
+ #The application is no longer available in the taskbar and in the task manager.
+   $SW_HIDE = 0
+   $null=[Win32Functions.Win32ShowWindowAsync]::ShowWindowAsync($WindowHandle,$SW_HIDE)
+}
+
+'@
+} #Add-Win32FunctionsWrapper
+

@@ -9,9 +9,11 @@ $Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
 $InitializeLogging=$MyInvocation.MyCommand.ScriptBlock.Module.NewBoundScriptBlock(${function:Initialize-Log4NetModule})
 &$InitializeLogging $Script:lg4n_ModuleName "$psScriptRoot\Log4Net.Config.xml"
 
+ #Texte du module 
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
-
-#todo change Trap -> Throw
+ 
+ #Texte du script généré
+Import-LocalizedData -BindingVariable CodeFormMsgs -Filename CodeFormLocalizedData.psd1 -EA Stop
 
 function Convert-Form {
 # .ExternalHelp ConvertForm-Help.xml           
@@ -20,17 +22,19 @@ function Convert-Form {
  Param(
       [ValidateNotNullOrEmpty()]
       [Parameter(Position=0,Mandatory=$True,ValueFromPipeline=$True)]   
-      #[Alias()] 
+      #[Alias()] todo 
     [string] $Source, 
      
      [Parameter(Position=1,Mandatory=$false)]
-    [string] $Destination,
-     
-    [switch] $AddInitialize,
+    [string] $Destination, #todo teste delayed SB
     
-    [switch] $DontLoad, #inverser la logique ?
+     [Parameter(Position=2,Mandatory=$false)]
+     [ValidateSet("unknown", "string", "unicode", "bigendianunicode", "utf8", "utf7", "utf32", "ascii", "default", "oem")]
+    [string] $Encoding='default',
     
-    [switch] $DontShow,
+    [switch] $noLoadAssemblies, 
+    
+    [switch] $noShowDialog,
      
     [switch] $Force,
      
@@ -55,19 +59,17 @@ Import-Module "$psScriptRoot\Transform.psm1" -DisableNameChecking -Verbose:$fals
  #Source est renseigné, on vérifie sa validité   
 $SourcePathInfo=New-PSPathInfo -Path $Source|Add-FileSystemValidationMember
 
- #todo vérifier les causes d'invalidation portées par la méthode appellée
-         
  #Le PSPath doit exister, ne pas contenir de globbing et être sur le FileSystem
 if (!$SourcePathInfo.isFileSystemItemFound()) 
 {
   if ($SourcePathInfo.isFileSystemProvider)
-  {Throw "Le paramètre Source doit pointer sur le FileSystem."}
+  {Throw ($ConvertFormMsgs.FileSystemPathRequired -F 'Source') }
   if ($SourcePathInfo.isWildcard)
-  {Throw "Le globbing n'est pas supporté pour le paramètre Source ; $Source"}
+  {Throw ($ConvertFormMsgs.GlobbingUnsupported -F 'Source',$Source) }
   elseif (!$SourcePathInfo.isDriveExist) 
-  {Throw "Le lecteur indiqué n'existe pas : $Source"}  
+  {Throw ($ConvertFormMsgs.DriveNotFound -F $Source) } 
   elseif(!$SourcePathInfo.isItemExist)
-  {Throw "Le fichier source n'existe pas : $Source"} 
+  {Throw ($ConvertFormMsgs.ItemNotFound -F 'source',$Source) } 
 }
 $SourceFI=$SourcePathInfo.GetFileName().GetasFileInfo()
   
@@ -79,16 +81,15 @@ if ($Destination -ne [String]::Empty)
   if (!$DestinationPathInfo.IsaValidNameForTheFileSystem()) 
   {
     if ($DestinationPathInfo.isFileSystemProvider)
-    {Throw "Le paramètre Destination doit pointer sur le FileSystem."}
+    {Throw ($ConvertFormMsgs.FileSystemPathRequired -F 'Destination') }
     if ($DestinationPathInfo.isWildcard)
-    {Throw "Le globbing n'est pas supporté pour le paramètre Destination : $Destination"}
+    {Throw ($ConvertFormMsgs.GlobbingUnsupported -F 'Destination',$Destination) }
     elseif (!$DestinationPathInfo.isDriveExist) 
-    {Throw "Le lecteur indiqué n'existe pas -> $Destination."}  
-  
-     #C'est un chemin relatif
-     #Le drive courant appartient-il au provider FS ? 
+    {Throw ($ConvertFormMsgs.ItemNotFound -F 'destination',$Destination) }  
+     #C'est un chemin relatif,le drive courant 
+     #appartient-il au provider FS ? 
     if (!$DestinationPathInfo.isAbsolute -and !$DestinationPathInfo.isCurrentLocationFileSystem)
-    { Throw "Le paramètre Destination doit pointer sur le FileSystem : $Destination"}
+    {Throw ($ConvertFormMsgs.FileSystemPathRequiredForCurrentLocation -F $DestinationPathInfo.ResolvedPSPath) }
   }
   $ProjectPaths=New-FilesName $psScriptRoot $SourceFI  $DestinationPathInfo
 }
@@ -98,8 +99,8 @@ else
 
  #Teste s'il n'y a pas de conflit dans les switchs
  #Problème potentiel: la form principale masque la console, la fermeture de la seconde fenêtre réaffichera la console
-If ( $HideConsole -and $DontLoad )
-{Write-Warning "Si vous convertissez une form secondaire l'usage du switch -HideConsole n'est pas nécessaire.`n`rSi c'est le cas, réexécutez votre appel sans préciser ce switch."} 
+If ( $HideConsole -and $noLoadAssemblies )
+{ Write-Warning $ConvertFormMsgs.ParameterHideConsoleNotNecessary } 
  
 Write-Debug "Fin des contrôles."
 
@@ -109,16 +110,15 @@ function Finalyze
   "LinesNewScript","Components","ErrorProviders"|
    Foreach {
     if (Test-Path Variable:$_) 
-     {
+    {
       $Lst=GV $_
       if ($Lst.Value -ne $null)
        {
          $Lst.Value.Clear()
          $Lst.Value=$null
        }
-     } 
+    } 
    }
-  $ConverFormDatas=$null 
 }
  
 #-------------------- Fin des Contrôles --------------------------------------------------------------------
@@ -135,11 +135,12 @@ $ErrorProviders =New-Object System.Collections.ArrayList(5)
 [boolean] $isDebutCodeInit = $false
 [string] $FormName=[string]::Empty
 
-Write-Verbose "Démarrage de l'analyse du fichier $Source"
+#todo change Trap -> Throw
+Write-Verbose ($ConvertFormMsgs.BeginAnalyze -F $Source)
 .{
   trap  [System.NotSupportedException]
   { 
-    Write-Warning "Le composant suivant ou une de ces fonctionnalités, requiert le modèle de thread STA (Single Thread Apartment)).`r`nRéessayez avec le paramètre -STA."
+    Write-Warning $ConvertFormMsgs.ComponentRequireSTA 
     Finalyze
     Throw $_
   }
@@ -154,7 +155,7 @@ Write-Verbose "Démarrage de l'analyse du fichier $Source"
     if (! $isDebutCodeInit)
     {  # On démarre l'insertion à partir de cette ligne
        # On peut donc supposer que l'on parse un fichier créé par le designer VS
-      if ($Ligne.contains("InitializeComponent()")) {$isDebutCodeInit= $true}
+      if ($Ligne.contains('InitializeComponent()')) {$isDebutCodeInit= $true}
     }
     else 
     {  
@@ -165,7 +166,7 @@ Write-Verbose "Démarrage de l'analyse du fichier $Source"
 # 			this.txt_name.Validating += new System.ComponentModel.CancelEventHandler(this.Txt_nameValidating);         
      
      # Fin de la méthode rencontrée ou ligne vide, on quitte l'itération. 
-      if (($Ligne.trim() -eq "}") -or ($Ligne.trim() -eq "")) {break}
+      if (($Ligne.trim() -eq "}") -or ($Ligne.trim() -eq [string]::Empty)) {break}
        # C'est une ligne de code, on l'insére 
       if ($Ligne.trim() -ne "{") 
       {    
@@ -179,8 +180,9 @@ Write-Verbose "Démarrage de l'analyse du fichier $Source"
         [void]$Components.Add($Ligne)
         Write-Debug "`t`t$Ligne"
         if (! $STA)
-        { 
-          if ( $Ligne.contains("System.Windows.Forms.WebBrowser") )
+        {  #todo test sous PS v2 et v3
+           #todo localisation
+          if ( $Ligne.contains('System.Windows.Forms.WebBrowser') )
            {Throw  new-object System.NotSupportedException "Par défaut le composant WebBrowser ne peut fonctionner sous PowerShell V1.0."}
           if ( $Ligne.contains("System.ComponentModel.BackgroundWorker") )
            {Write-Warning "Par défaut les méthodes de thread du composant BackgroundWorker ne peuvent fonctionner sous PowerShell V1.0."}
@@ -196,14 +198,14 @@ Write-Verbose "Démarrage de l'analyse du fichier $Source"
 
 Write-debug "Nom de la forme: '$FormName'"
 if (!$isDebutCodeInit)
-{ Throw "La méthode InitializeComponent() est introuvable dans le fichier $Source.`n`rLa conversion ne peut s'effectuer."}
+{ Throw ($ConvertFormMsgs.InitializeComponentNotFound -F $Source )}
  
-if ($FormName -eq "") 
+if ($FormName -eq [string]::Empty) 
 {
-   $BadName=""
+   $WarningName=[string]::Empty
    if ($Source -notMatch "(.*)\.designer\.cs$")
-    {$BadName="Vérifiez que le nom du fichier est bien celui généré par le designer de Visual Studio : Form.Designer.cs."}
-   Throw "Le nom de la form est introuvable dans la méthode InitializeComponent() du fichier $Source.`n`rLa conversion ne peut s'effectuer.`n`r$BadName"  
+   { $WarningName=$ConvertFormMsgs.DesignerNameNotFound }
+   Throw ($ConvertFormMsgs.FormNameNotFound -F $Source,$WarningName)  
 }
 
 Backup-Collection $Components "Récupération des lignes de code, de la méthode InitializeComponent, effectuée."
@@ -225,11 +227,12 @@ if ($STA)
   [void]$LinesNewScript.Add( (Add-TestApartmentState) ) 
 } 
   
-If ( $HideConsole -and $AddInitialize )
+If ($HideConsole -and !$noLoadAssemblies)
 { 
-  Write-Debug "[Ajout Code] . .\APIWindows.ps1"
-  [void]$LinesNewScript.Add(". .\APIWindows.ps1" )
-} 
+  Write-Debug "[Ajout Code] Win32FunctionsType"
+  [void]$LinesNewScript.Add((Add-Win32FunctionsType))
+  [void]$LinesNewScript.Add((Add-Win32FunctionsWrapper))
+}
 
 [boolean] $IsTraiteMethodesForm = $False # Jusqu'à la rencontre de la chaîne " # Form1  "
 [boolean] $IsUsedResources= $false       # On utilise un fichier de ressources
@@ -242,7 +245,7 @@ if (Test-Path Variable:Ofs)
 {$oldOfs,$Ofs=$Ofs,"`r`n" }
 else 
 { 
-  $Ofs=""
+  $Ofs=[string]::Empty
   $oldOfs,$Ofs=$Ofs,"`r`n"
 }
 
@@ -255,7 +258,7 @@ $Ofs=$oldOfs
 $Components = New-Object System.Collections.ArrayList($null)
  #Transforme une string en une collection
 $Components.AddRange($Temp.Split("`r`n"))
-rv Temp
+Remove-Variable Temp
 
 
 Write-Debug "Début de la seconde analyse"
@@ -267,16 +270,17 @@ for ($i=0; $i -le $Components.Count-1 ;$i++)
      $crMgr=[regex]::match($Components[$i],"\s= new System\.ComponentModel\.ComponentResourceManager\(typeof\((.*)\)\);$")
      if ($crMgr.success)
      {
-       Write-Debug "IsUsedResources : True"
        $IsUsedResources = $True
        $Components[$i]=Add-ManageRessources  $ProjectPaths.Sourcename
        continue
      }
    }
+   Write-Debug "IsUsedResources : $IsUsedResources"
+   
     # Recherche les noms des possibles ErrorProvider 
     #Ligne :  this.errorProvider2 = new System.Windows.Forms.ErrorProvider(this.components);
     #Write-Debug "Test ErrorProviders: $($Components[$i])"
-   if ($Components[$i] -match ("^\s*this\.(.*) = new System.Windows.Forms.ErrorProvider\(this.components\);$"))
+   if ($Components[$i] -match ('^\s*this\.(.*) = new System.Windows.Forms.ErrorProvider\(this.components\);$'))
    { 
       [void]$ErrorProviders.Add($Matches[1])
       Write-Debug "Find ErrorProviders : $Matches[1]"
@@ -301,26 +305,30 @@ for ($i=0; $i -le $Components.Count-1 ;$i++)
        {
          Write-Debug "Match Foreach ErrorProvider"
           #On efface le contenu de la ligne et les 3 précédentes
-         -3..0|%{ $Components[$i+$_]=""}
+         -3..0|%{ $Components[$i+$_]=[string]::Empty}
        }#If
     }#ForEach
    # -----------------------------------------------------------------------------------------------------------------
     
-    # Suppression des lignes contenant un appel aux méthodes suivantes : SuspendLayout, ResumeLayout et PerformLayout 
+    # Suppression des lignes contenant un appel aux méthodes suivantes : SuspendLayout, ResumeLayout et PerformLayout
+    #  SuspendLayout() force Windows à ne pas redessiner la form. 
     #Ligne se terminant seulement par Layout(false); ou Layout(true); ou Layout();
-    if ($Components[$i] -match ("Layout\((false|true)??\);$"))
-    {$Components[$i]="";continue}
-    
-    if ($Components[$i].Contains("AutoScale"))
-    {$Components[$i]="";Continue}
+    if ($Components[$i] -match ('Layout\((false|true)??\);$'))
+    {$Components[$i]=[string]::Empty;continue}
+
+      #Les lignes suivantes ne sont pas prise en compte 
+      #   this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+      #   this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+    if ($Components[$i].Contains('AutoScale'))
+    {$Components[$i]=[string]::Empty;Continue}
 
     # Aucun équivalent ne semble exister en Powershell pour ces commandes :
     # Pour les contrôles : DataGridView, NumericUpDown et PictureBox
     # Suppression des lignes de gestion du DataBinding. 
-    if ($Components[$i].Contains("((System.ComponentModel.ISupportInitialize)(" ))
-    {$Components[$i]="";Continue}
+    if ($Components[$i].Contains('((System.ComponentModel.ISupportInitialize)(') )
+    {$Components[$i]=[string]::Empty;Continue}
 }#for
-Backup-Collection $Components "Modifications des déclarations multi-lignes effectuées."
+Backup-Collection $Components 'Modifications des déclarations multi-lignes effectuées.'
 #-----------------------------------------------------------------------------
 #  Fin de traitements des propriétés "multi-lignes"
 #----------------------------------------------------------------------------- 
@@ -328,12 +336,12 @@ Backup-Collection $Components "Modifications des déclarations multi-lignes effec
 if ($IsUsedResources -eq $true)
 { New-RessourcesFile $ProjectPaths }
 
-If($DontLoad -eq $False)
+If(!$noLoadAssemblies)
 {
    Write-Debug "[Ajout Code] chargement des assemblies"
-   $Assemblies=@("System.Windows.Forms","System.Drawing")
+   $Assemblies=@('System.Windows.Forms','System.Drawing')
    
-   [void]$LinesNewScript.Add("# Chargement des assemblies externes")
+   [void]$LinesNewScript.Add($CodeFormMsgs.LoadingAssemblies)
    Add-LoadAssembly $LinesNewScript $Assemblies
 }
 
@@ -343,30 +351,30 @@ $progress=0
 foreach ($Ligne in $Components)
 {
    $progress++                     
-   write-progress -id 1 -activity "Transformation du code source ($($Components.count) lignes)" -status "Patientez" -percentComplete (($progress/$Components.count)*100)
+   Write-Progress -id 1 -activity ($ConvertFormMsgs.TransformationProgress -F $Components.Count) -status $ConvertFormMsgs.TransformationProgressStatus -percentComplete (($progress/$Components.count)*100)
      #On supprime les espaces en début et en fin de chaînes
      #Cela facilite la construction des expressions régulières
    $Ligne = $Ligne.trim()
-   if ($Ligne -eq "") {Continue} #Ligne suivante
+   if ($Ligne -eq [string]::Empty) {Continue} #Ligne suivante
 
      # On ajoute la création d'un événement
      # Gestion d'un event d'un composant :  this.btnRunClose.Click += new System.EventHandler(this.btnRunClose_Click);
 
      # La ligne débute par "this" suivi d'un point puis du nom du composant puis du nom de l'event
      # this.TxtBoxSaisirNombre.Validating += new System.ComponentModel.CancelEventHandler(this.TxtBox1_Validating);
-   if ($Ligne -match "^this\.?[^\.]+\.\w+ \+= new [A-Za-z0-9_\.]+EventHandler\(") 
+   if ($Ligne -match '^this\.?[^\.]+\.\w+ \+= new [A-Za-z0-9_\.]+EventHandler\(') 
    { 
        # On récupére le nom du composant et le nom de l'événement dans $T[1],$T[2]
-      $T=$Ligne.Split(@(".","+"))
+      $T=$Ligne.Split(@('.','+'))
        #On ajoute le scriptblock gérant l'événement
       [void]$LinesNewScript.Add( (Add-EventComponent $T[1] $T[2].Trim()) )
       Continue
    }
       #Gestion d'un event de la form : this.Load += new System.EventHandler(this.Form1_Load);
-   elseif ($Ligne -match "^this\.?\w+ \+= new [A-Za-z0-9_\.]+EventHandler\(") 
+   elseif ($Ligne -match '^this\.?\w+ \+= new [A-Za-z0-9_\.]+EventHandler\(') 
    {
       # On récupére le nom du composant et le nom de l'événement dans $T[1],$T[2]
-     $T=$Ligne.Split(@(".","+"))
+     $T=$Ligne.Split(@('.','+'))
      $EventName=$T[1].Trim()
       #On génère par défaut ces deux événements
      if (($EventName -eq "FormClosing") -or ($EventName -eq "Shown")) {continue}
@@ -435,7 +443,7 @@ foreach ($Ligne in $Components)
     {
        $IsTraiteMethodesForm = $True
         # On ajoute le constructeur de la Form
-       [void]$LinesNewScript.Add("`$$FormName = new-object System.Windows.Forms.form")
+       [void]$LinesNewScript.Add("`$$FormName = New-Object System.Windows.Forms.Form")
         #On ajoute les possibles ErrorProvider
        if ($ErrorProviders.Count -gt 0)
        { 
@@ -451,24 +459,24 @@ foreach ($Ligne in $Components)
        $Ligne = $Ligne -replace "^this.(.*)", "`$$FormName.`$1"
         # Ensuite on remplace toutes les occurences de "this". 
         # Ex :"$Form.Controls.Add(this.button1)" devient "$Form1.Controls.Add($button1)"         
-       if ($Ligne.Contains("this."))  
-       { $ligne = $Ligne.replace("this.", "$") }
+       if ($Ligne.Contains('this.'))  
+       { $ligne = $Ligne.replace('this.', '$') }
     }
     else
     {   # On modifie les chaînes débutant par "this" qui opérent sur les composants
         # ,on remplace toutes les occurences de "this". 
         # Ex : "this.treeView1.TabIndex = 18" devient "$treeView1.TabIndex = 18" 
-       if ($Ligne.StartsWith("this.")) 
-       { $Ligne = $Ligne.replace("this.",'$') }
+       if ($Ligne.StartsWith('this.')) 
+       { $Ligne = $Ligne.replace('this.','$') }
     }
       
       #Remplace le token d'appel d'un constructeur d'instance des composants graphiques. 
       # this.PanelMainFill = new System.Windows.Forms.Panel();
-    $Ligne = $Ligne.replace(" new ", " new-object ")
+    $Ligne = $Ligne.replace(' new ', ' New-Object ')
      #Todo this.tableLayoutPanelFill.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-    $ligne = $Ligne.replace("(new ", "(new-object ")
+    $ligne = $Ligne.replace('(new ', '(New-Object ')
     
-    $Ligne = $Ligne -replace "(^.*= new-object System.Drawing.SizeF\()([0-9]+)F, ([0-9]+)F\)$", '$1$2, $3)'
+    $Ligne = $Ligne -replace "(^.*= New-Object System.Drawing.SizeF\()([0-9]+)F, ([0-9]+)F\)$", '$1$2, $3)'
      #Traite les ressources 
     If ($IsUsedResources)
     {   
@@ -483,7 +491,7 @@ foreach ($Ligne in $Components)
 #        Write-host $ligne
         
     }
-     
+
 # -------  Traite les propriétés .Font
     $MatchTmp =[Regex]::Match($Ligne,'^(.*)(\.Font =.*System.Drawing.Font\()(.*)\)$')   
     if ($MatchTmp.Success -eq $true)
@@ -491,7 +499,7 @@ foreach ($Ligne in $Components)
         #On traite la partie paramètres d'une déclaration 
        $ParametresFont = Select-PropertyFONT $MatchTmp
        $ligne = ConvertTo-Line $MatchTmp (1,2) $ParametresFont
-       [void]$LinesNewScript.Add($ligne+")")
+       [void]$LinesNewScript.Add($ligne+')')
        continue
     }
 
@@ -507,7 +515,7 @@ foreach ($Ligne in $Components)
        $Ligne = ConvertTo-Line $MatchTmp (1) $ParametresAnchor
         #todo la function ConvertTo-Line est à revoir. Inadapté dans ce cas
         #$button1[System.Windows.Forms.AnchorStyles]"Top,Bottom,Left"
-       $ligne = $ligne.replace("[System.",".Anchor = [System.")
+       $ligne = $ligne.replace('[System.','.Anchor = [System.')
        [void]$LinesNewScript.Add($Ligne)
        continue
     }
@@ -522,7 +530,7 @@ foreach ($Ligne in $Components)
        $Ligne = ConvertTo-Line $MatchTmp (1) $ParametresShortcutKeys
         #todo la function ConvertTo-Line est à revoir. Inadapté dans ce cas
         #$button1[System.Windows.Forms.AnchorStyles]"Top,Bottom,Left"
-       $ligne = $ligne.replace("[System.",".ShortcutKeys = [System.")
+       $ligne = $ligne.replace('[System.','.ShortcutKeys = [System.')
        [void]$LinesNewScript.Add($Ligne)
        continue
     }
@@ -534,8 +542,8 @@ foreach ($Ligne in $Components)
         #On traite la partie paramétres d'une déclaration 
        $ParametresRGB = Select-ParameterRGB $MatchTmp
        $Ligne = ConvertTo-Line $MatchTmp (1,2) $ParametresRGB
-       $Ligne = $Ligne.Replace("System.Drawing.Color.FromArgb","[System.Drawing.Color]::FromArgb")
-       [void]$LinesNewScript.Add($Ligne+")")
+       $Ligne = $Ligne.Replace('System.Drawing.Color.FromArgb','[System.Drawing.Color]::FromArgb')
+       [void]$LinesNewScript.Add($Ligne+')')
        continue
     }
 # ------- Fertig !     
@@ -543,27 +551,29 @@ foreach ($Ligne in $Components)
  } #foreach
 Write-Debug "Conversion du code CSharp effectuée."
 
- [void]$LinesNewScript.Add( (Add-SpecialEventForm $FormName))
+ [void]$LinesNewScript.Add( (Add-SpecialEventForm $FormName -HideConsole:$HideConsole))
  If ($IsUsedResources)
  {  
     Write-Debug "[Ajout Code]Libération des ressources"
-    [void]$LinesNewScript.Add(" #Libération des ressources")
-    [void]$LinesNewScript.Add("`$Reader.Close()  #Appel Dispose") 
+    [void]$LinesNewScript.Add($CodeFormMsgs.DisposeResources)
+    [void]$LinesNewScript.Add('$Reader.Close()') 
  }
  
- If( $dontShow -eq $false)
+ If (!$noShowDialog)
  { 
     Write-Debug "[Ajout Code] Appel à la méthode ShowDialog/Dispose"
     [void]$LinesNewScript.Add("`$ModalResult=`$$FormName.ShowDialog()") 
-    [void]$LinesNewScript.Add(" #Libération de la Form")
+    [void]$LinesNewScript.Add($CodeFormMsgs.DisposeForm)
+     #Showdialog() need explicit Dispose()
     [void]$LinesNewScript.Add("`$$FormName.Dispose()")
  }
- If (!$dontShow -and $HideConsole )
+ If (!$noShowDialog -and $HideConsole )
  {
-    Write-Debug "[Ajout Code] Show-PSWindow"
-    [void]$LinesNewScript.Add("Show-PSWindow")
+    Write-Debug "[Ajout Code] Show-Window"
+    [void]$LinesNewScript.Add('Show-Window')
  }
 
+ #todo change Trap -> Throw
    # Ecriture du fichier de sortie
  &{
     # On utilise un scriptblock pour bénéficier d'un trap local,
@@ -576,21 +586,20 @@ Write-Debug "Conversion du code CSharp effectuée."
    &{ 
      if ((!$Force) -and (Test-Path $ProjectPaths.Destination))
      {  
-      $Choice=Read-Choice "Le fichier de destination existe déjà : $($ProjectPaths.Destination)" "Voulez-vous le remplacer ?"
+      $Choice=Read-Choice ($ConvertFormMsgs.ReadChoiceCaption -F $ProjectPaths.Destination) $ConvertFormMsgs.ReadChoiceMessage
       if ($Choice -eq 1)
-      { Write-Warning "Opération abandonnée."; Finalyze; Return }
+      { Write-Warning $ConvertFormMsgs.OperationCancelled; Finalyze; Return }
      }
 
-     Write-Verbose "Génération du script $($ProjectPaths.Destination)`r`n"
-     #$LinesNewScript | Out-File -FilePath $ProjectPaths.Destination -Encoding Default -Width 999
-     Out-File -InputObject $LinesNewScript -FilePath $ProjectPaths.Destination -Encoding Default -Width 999
-     Write-Verbose "Vérification de la syntaxe du script généré." 
+     Write-Verbose ($ConvertFormMsgs.GenerateScript -F $ProjectPaths.Destination)
+     Out-File -InputObject $LinesNewScript -FilePath $ProjectPaths.Destination -Encoding $Encoding -Width 999
+     Write-Verbose $ConvertFormMsgs.SyntaxVerification 
      Test-PSScript -Filepath $ProjectPaths.Destination -IncludeSummaryReport
    }
  }
 
-  If ($dontShow -and $HideConsole)
-  { Write-Verbose "Pensez à appeler la méthode Show-PSWindow après `$$FormName.ShowDialog()." }
+  If ($noShowDialog -and $HideConsole)
+  { Write-Verbose $ConvertFormMsgs.CallShowWindow }
  
  Finalyze
  
@@ -599,6 +608,6 @@ Write-Debug "Conversion du code CSharp effectuée."
    Write-Debug "Emission de l'objet fichier : $($ProjectPaths.Destination)"
    gci $ProjectPaths.Destination
  } 
- Write-Debug ("[{0}] Fin du script atteinte." -F $MyInvocation.MyCommand)
- Write-Verbose "Conversion terminée : $($ProjectPaths.Source)"
+ Write-Debug ('[{0}] Fin du script atteinte.' -F $MyInvocation.MyCommand)
+ Write-Verbose ($ConvertFormMsgs.ConversionComplete-F $ProjectPaths.Source)
 } #Convert-Form

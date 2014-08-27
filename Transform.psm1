@@ -214,7 +214,7 @@ function Select-PropertyFONT([System.Text.RegularExpressions.Match] $MatchStr)
     #6 Le sixième (true - false) est traité par la suite dans le script principal
 
                   #Pb :/
-    {$_ -ge 7} { throw ('Unexpected case : {0}' -f ($MatchStr.Groups[3].value)) }
+    {$_ -ge 7} { throw (new-object ConvertForm.CSParseException( ('Unexpected case : {0}' -f ($MatchStr.Groups[3].value)))) }
   }
   
   return $Parametres
@@ -345,6 +345,8 @@ function New-RessourcesFile{
    #On génére le fichier de ressources
    #todo + versions de resgen ?
    #todo : http://blogs.msdn.com/b/visualstudio/archive/2010/06/18/resgen-exe-error-an-attempt-was-made-to-load-a-program-with-an-incorrect-format.aspx
+   #        connect.microsoft.com/VisualStudio/feedback/details/532584/error-when-compiling-resx-file-seems-related-to-beta2-bug-5252020
+   #        http://stackoverflow.com/questions/9190885/could-not-load-file-or-assembly-system-drawing-or-one-of-its-dependencies-erro
   $Resgen="$psScriptRoot\ResGen.exe" 
   if ( !(Test-Path $Resgen))
   { Write-Error ($TransformMsgs.ResgenNotFound -F $Resgen) }
@@ -401,7 +403,7 @@ function Add-ErrorProvider([String] $ComponentName, [String] $FormName)
 `#
 `# $ComponentName
 `#
-$('`${0}.ContainerControl = `${1}' -F $ComponentName,$FormName)
+$('${0}.ContainerControl = ${1}' -F $ComponentName,$FormName)
 
 "@
 } #Add-ErrorProvider
@@ -412,7 +414,7 @@ function Add-TestApartmentState {
 
  # The -STA parameter is required
 if ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne [System.Threading.ApartmentState]::STA )
-{ Throw "$($TransformMsgs.NeedSTAThreading)" }
+{ Throw (new-object System.Threading.ThreadStateException("$($TransformMsgs.NeedSTAthreading)")) }
 
 "@
 } #Add-TestApartmentState
@@ -435,7 +437,7 @@ function Read-Choice{
   $Yes = New-Object System.Management.Automation.Host.ChoiceDescription '&Yes'
   $No = New-Object System.Management.Automation.Host.ChoiceDescription '&No'
   $Choices = [System.Management.Automation.Host.ChoiceDescription[]]($Yes,$No)
-  $Host.UI.PromptForChoice($Caption,$Message,$Choices,([byte]($DefaultChoice -eq 'no')))
+  $Host.UI.PromptForChoice($Caption,$Message,$Choices,([byte]($DefaultChoice -eq 'No')))
 }
 
 #Functions Windows
@@ -484,3 +486,5 @@ function Hide-Window([IntPtr] $WindowHandle=(Get-Process –id $pid).MainWindowHan
 '@
 } #Add-Win32FunctionsWrapper
 
+New-Variable ChoiceNO -Option ReadOnly -Value ([int]1) -EA SilentlyContinue
+Export-ModuleMember -Variable ChoiceNO -Function * 

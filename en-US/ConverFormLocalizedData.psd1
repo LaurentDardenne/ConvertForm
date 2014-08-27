@@ -1,41 +1,28 @@
 ﻿ConvertFrom-StringData @'
- ParameterStringEmpty=The parameter '{0}' can not be an empty string.
- PathMustExist=The path does not exist : {0}
- PathIsNotAFile=The path does not reference to a file or the path is invalid : {0}  
- ValueNotSupported=The value '{0}' is not supported by PSIonic.
- TypeNotSupported={0}: The type '{1}' is not supported.
- CommentMaxValue=The value of 'Comment' parameter must not exceeds 32767 characters.
-
- isBadPasswordWarning=Bad password for the archive {0}
- ZipArchiveBadPassword=An invalid password was given to extract archive {0}.
- InvalidPasswordForDataEncryptionValue=The value provided for Password parameter ('{0}') is invalid for the given value of DataEncryption '{1}'.
- ZipArchiveCheckPasswordError=Error occured while checking password on the archive {0} : {1}.
-
- AddEntryError=Can not add the entry '{0}' into the archive '{1}': {2}
- EntryIsNull=The entry '{0}' is `$null.
- ExpandZipEntryError=The entry named '{0}' do not exist in the archive '{1}'
+ FileSystemPathRequired=Le chemin doit pointer sur le FileSystem.
+ FileSystemPathRequiredForCurrentLocation=L'usage de chemin relatif, nécessite que le chemin courant pointe sur le système de fichier : {0}
+ GlobbingUnsupported=Le globbing n'est pas supporté pour ce paramètre : {0} 
+ DriveNotFound=Le lecteur indiqué n'existe pas  : '{0}'  
+ ItemNotFound=Le fichier est introuvable : '{0}' 
  
- RemoveEntryError=Impossible to delete the entry  '{0}' into archive '{1}', because it does not exist.
- RemoveEntryNullError=The argument is null.Archive concerned '{0}'
+ BeginAnalyze=Démarrage de l'analyse du fichier '{0}'
+ ComponentRequireSTA=Le composant suivant ou une de ces fonctionnalités, requiert le modèle de thread STA (Single Thread Apartment)).`r`nRéessayez avec le paramètre -STA.
+ InitializeComponentNotFound=La méthode InitializeComponent() est introuvable dans le fichier {0}.`n`rLa conversion ne peut s'effectuer.
  
- ZipArchiveReadError=Error occured while reading the archive {0} : {1}.
- ZipArchiveExtractError=Error occured while extracting the archive {0} : {1}.
- ZipArchiveCheckIntegrityError=Error occured while checking the archive integrity {0} : {1}.
- isCorruptedZipArchiveWarning=Corrupted archive : {0}
-
- TestisArchiveError=Error occured while testing the archive {0} : {1}.
- isNotZipArchiveWarning=The file is not a zip archive : {0}
+ DesignerNameNotFound=`n`r.Vérifiez que le nom du fichier source est bien celui généré par le designer de Visual Studio : FormName.Designer.cs.
+ FormNameNotFound=Le nom de la Form est introuvable dans la méthode InitializeComponent() du fichier '{0}'.`n`rLa conversion ne peut s'effectuer.`n`r{1}"  
+ TransformationProgress=Transformation du code source ({0}) lignes
+ TransformationProgressStatus=Veuillez patienter
+ ReadChoiceCaption=Le fichier de destination existe déjà : '{0}'
+ ReadChoiceMessage=Voulez-vous le remplacer ?
+ OperationCancelled=Opération abandonnée.
  
- ExcludedObject=The current object is not an instance of System.IO.FileInfo type : {0}
- IsNullOrEmptyArchivePath=The file name is empty or ToString() return an empty string.
- ItemNotFound=Can not find the path '{0}', because it does not exist.
- EmptyResolve=The resolve does not find file.
- PathNotInEntryPathRoot=The path is not in the root directory : {0}
- UnableToConvertEntryRootPath=Unable to convert the root path : {0}
- FromPathEntryNotFound=Can not find the path '{0}' in the archive '{1}', because it does not exist.
+ GenerateScript=Génération du script '{0}'`r`n
+ SyntaxVerification=Vérification de la syntaxe du script généré.
  
- ThisParameterRequiresThisParameter=The '{0}' parameter requires to declare the '{1}' parameter. 
+ ConversionComplete=Conversion terminée : '{0}' 
  
- ProgressBarExtract=Extract in progress
+ ParameterHideConsoleNotNecessary=Si vous convertissez une form secondaire l'usage du switch -HideConsole n'est pas nécessaire.`n`rSi c'est le cas, réexécutez votre appel sans préciser ce switch. 
+ ParameterStringEmpty=Le paramètre '{0}' ne peut être une chaîne vide.
+ ThisParameterRequiresThisParameter=Le paramètre '{0}' nécessite de déclarer le paramètre '{1}'.
 '@ 
-

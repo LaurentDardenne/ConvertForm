@@ -1,9 +1,9 @@
 ﻿ConvertFrom-StringData @'
- FileSystemPathRequired=Le paramètre -{0} doit pointer sur le FileSystem.
- FileSystemPathRequiredForCurrentLocation=Pour les chemins relatif, le chemin courant doit pointr sur le système de fichier : {0}
- GlobbingUnsupported=Le globbing n'est pas supporté pour le paramètre -{0} : {1} 
+ FileSystemPathRequired=Le chemin doit pointer sur le FileSystem.
+ FileSystemPathRequiredForCurrentLocation=L'usage de chemin relatif, nécessite que le chemin courant pointe sur le système de fichier : {0}
+ GlobbingUnsupported=Le globbing n'est pas supporté pour ce paramètre : {0} 
  DriveNotFound=Le lecteur indiqué n'existe pas  : '{0}'  
- ItemNotFound=Le fichier {0} est introuvable : '{1}' 
+ ItemNotFound=Le fichier est introuvable : '{0}' 
  
  BeginAnalyze=Démarrage de l'analyse du fichier '{0}'
  ComponentRequireSTA=Le composant suivant ou une de ces fonctionnalités, requiert le modèle de thread STA (Single Thread Apartment)).`r`nRéessayez avec le paramètre -STA.

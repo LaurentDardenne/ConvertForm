@@ -121,11 +121,10 @@ function Get-ScriptDirectory
 `$ScriptPath = Get-ScriptDirectory
 `$RessourcesPath= Join-Path `$ScriptPath "$SourceName.resources"
 if ( !(Test-Path `$RessourcesPath))
- {
+{
   Write-Error `"$($TransformMsgs.ManageResourcesError)`"
   break; 
- }
-
+}
   #Gestion du fichier des ressources
 `$Reader = new-Object System.Resources.ResourceReader(`$RessourcesPath)
 `$Ressources=@{}

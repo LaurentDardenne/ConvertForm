@@ -23,62 +23,70 @@ Import-Module "$psScriptRoot\Transform.psm1" -DisableNameChecking -Verbose:$fals
  #validation d'un fichier PS1 généré
 ."$psScriptRoot\Tools\Test-PSScript.Ps1"
 
-Add-Type -TypeDefinition @'
-using System;
-
-namespace ConvertForm {
-    [Serializable]
-    public class OperationCanceledException : System.ApplicationException
-    {
-       public OperationCanceledException() : base()
-       {
-       }
-       
-       public OperationCanceledException(string message) : base(message)
-       {
-       }
-       
-       public OperationCanceledException(string message, Exception innerException)
-       : base(message, innerException)
-       {
-       }
-    }
-
-    [Serializable]
-    public class ComponentNotSupportedException : System.ApplicationException
-    {
-       public ComponentNotSupportedException() : base()
-       {
-       }
-       
-       public ComponentNotSupportedException(string message) : base(message)
-       {
-       }
-       
-       public ComponentNotSupportedException(string message, Exception innerException)
-       : base(message, innerException)
-       {
-       }
-    }
-
-    [Serializable]
-    public class CSParseException : System.ApplicationException
-    {
-       public CSParseException() : base()
-       {
-       }
-       
-       public CSParseException(string message) : base(message)
-       {
-       }
-       
-       public CSParseException(string message, Exception innerException)
-       : base(message, innerException)
-       {
-       }
-    }
-}
+try {
+  $OLDWP,$WarningPreference=$WarningPreference,'SilentlyContinue'
+  Add-Type -TypeDefinition @'
+  using System;
+  
+  namespace ConvertForm {
+      [Serializable]
+      public class OperationCanceledException : System.ApplicationException
+      {
+         public OperationCanceledException() : base()
+         {
+         }
+         
+         public OperationCanceledException(string message) : base(message)
+         {
+         }
+         
+         public OperationCanceledException(string message, Exception innerException)
+         : base(message, innerException)
+         {
+         }
+      }
+  
+      [Serializable]
+      public class ComponentNotSupportedException : System.ApplicationException
+      {
+         public ComponentNotSupportedException() : base()
+         {
+         }
+         
+         public ComponentNotSupportedException(string message) : base(message)
+         {
+         }
+         
+         public ComponentNotSupportedException(string message, Exception innerException)
+         : base(message, innerException)
+         {
+         }
+      }
+  
+      [Serializable]
+      public class CSParseException : System.ApplicationException
+      {
+         public CSParseException() : base()
+         {
+         }
+         
+         public CSParseException(string message) : base(message)
+         {
+         }
+         
+         public CSParseException(string message, Exception innerException)
+         : base(message, innerException)
+         {
+         }
+      }
+  } 
 '@
+} Finally{
+#bug ? https://connect.microsoft.com/PowerShell/feedbackdetail/view/917335
+#-IgnoreWarnings do not work 
+#-WV IgnoreWarnings do not work
+ $WarningPreference=$OLDWP  
+}
 
 function Convert-Form {
 # .ExternalHelp ConvertForm-Help.xml           
@@ -105,65 +113,92 @@ function Convert-Form {
      
     [switch] $HideConsole,
     
-    [switch] $PassThru,
-     
-    [switch] $STA
+    [switch] $PassThru
  )
 
  process {
-  $Source=$Source.Trim()
+  [boolean] $STA=$false
   if ($Destination -ne $null) 
   { $Destination=($Destination -as [String]).Trim() }
   else 
   { $Destination=[String]::Empty } 
-  
-   #Source est renseigné, on vérifie sa validité   
-  $SourcePathInfo=New-PSPathInfo -Path $Source|Add-FileSystemValidationMember
-  
-   #Le PSPath doit exister, ne pas contenir de globbing et être sur le FileSystem
-  if (!$SourcePathInfo.isFileSystemItemFound()) 
-  {
-    if ($SourcePathInfo.isFileSystemProvider)
-    {Throw (New-Object System.ArgumentException($ConvertFormMsgs.FileSystemPathRequired,'Source')) }
-    if ($SourcePathInfo.isWildcard)
-    {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $Source),'Source'))}
-    elseif (!$SourcePathInfo.isDriveExist) 
-    {Throw (New-Object System.ArgumentException($ConvertFormMsgs.DriveNotFound,'Source')) } 
-    elseif(!$SourcePathInfo.isItemExist)
-    {Throw (New-Object System.ArgumentException($ConvertFormMsgs.ItemNotFound,'Source')) } 
-  }
-  $SourceFI=$SourcePathInfo.GetFileName().GetasFileInfo()
+ 
+  try { 
+     #Source est renseigné, on vérifie sa validité   
+    $SourcePathInfo=New-PSPathInfo -Path ($Source.Trim())|Add-FileSystemValidationMember
     
-   #Destination est renseigné, on vérifie sa validité  
-  if ($Destination -ne [String]::Empty)
-  {
-    #Le PSPath doit être valide, ne pas contenir de globbing et être sur le FileSystem
-    $DestinationPathInfo=New-PSPathInfo -Path $Destination|Add-FileSystemValidationMember
-    if (!$DestinationPathInfo.IsaValidNameForTheFileSystem()) 
+     #Le PSPath doit exister, ne pas contenir de globbing et être sur le FileSystem
+    if (!$SourcePathInfo.isFileSystemItemFound()) 
     {
-      if ($DestinationPathInfo.isFileSystemProvider)
-      {Throw (New-Object System.ArgumentException($ConvertFormMsgs.FileSystemPathRequired -F 'Destination')) }
-      if ($DestinationPathInfo.isWildcard)
-      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $Destination),'Destination')) }
-      elseif (!$DestinationPathInfo.isDriveExist) 
-      {Throw (New-Object System.ArgumentException($ConvertFormMsgs.ItemNotFound,'Destination')) }  
-       #C'est un chemin relatif,le drive courant 
-       #appartient-il au provider FS ? 
-      if (!$DestinationPathInfo.isAbsolute -and !$DestinationPathInfo.isCurrentLocationFileSystem)
-      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.FileSystemPathRequiredForCurrentLocation -F $DestinationPathInfo.ResolvedPSPath),'Destination')) }
+      if ($SourcePathInfo.isFileSystemProvider)
+      {Throw (New-Object System.ArgumentException($ConvertFormMsgs.FileSystemPathRequired,'Source')) }
+      if ($SourcePathInfo.isWildcard)
+      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $SourcePathInfo.GetFileName()),'Source'))}
+      elseif (!$SourcePathInfo.isDriveExist) 
+      {Throw (New-Object System.ArgumentException($ConvertFormMsgs.DriveNotFound,'Source')) } 
+      elseif(!$SourcePathInfo.isItemExist)
+      {Throw (New-Object System.ArgumentException($ConvertFormMsgs.ItemNotFound,'Source')) } 
     }
-    $ProjectPaths=New-FilesName $psScriptRoot $SourceFI  $DestinationPathInfo
-  }
-  else 
-  { $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $Destination}
-       
-   #Teste s'il n'y a pas de conflit dans les switchs
-   #Problème potentiel: la form principale masque la console, la fermeture de la seconde fenêtre réaffichera la console
-  If ( $HideConsole -and $noLoadAssemblies )
-  { Write-Warning $ConvertFormMsgs.ParameterHideConsoleNotNecessary } 
-   
-  Write-Debug "Fin des contrôles."
+    $SourceFI=$SourcePathInfo.GetFileName().GetasFileInfo()
+  } catch {
+      $PSCmdlet.WriteError(
+        (New-Object System.Management.Automation.ErrorRecord (
+   		   $_.Exception,                         
+           "AnalyzePathError", 
+           "InvalidArgument",
+           ("[{0}]" -f $Source)
+           )  
+        )
+      )  
+      return  
+  }      
   
+  try {
+     #Destination est renseigné, on vérifie sa validité  
+    if ($Destination -ne [String]::Empty)
+    {
+      #Le PSPath doit être valide, ne pas contenir de globbing et être sur le FileSystem
+      $DestinationPathInfo=New-PSPathInfo -Path $Destination|Add-FileSystemValidationMember
+      if (!$DestinationPathInfo.IsaValidNameForTheFileSystem()) 
+      {
+        if ($DestinationPathInfo.isFileSystemProvider)
+        {Throw (New-Object System.ArgumentException($ConvertFormMsgs.FileSystemPathRequired -F 'Destination')) }
+        if ($DestinationPathInfo.isWildcard)
+        {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $Destination),'Destination')) }
+        elseif (!$DestinationPathInfo.isDriveExist) 
+        {Throw (New-Object System.ArgumentException($ConvertFormMsgs.ItemNotFound,'Destination')) }  
+         #C'est un chemin relatif,le drive courant 
+         #appartient-il au provider FS ? 
+        if (!$DestinationPathInfo.isAbsolute -and !$DestinationPathInfo.isCurrentLocationFileSystem)
+        {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.FileSystemPathRequiredForCurrentLocation -F $DestinationPathInfo.ResolvedPSPath),'Destination')) }
+      }
+      $ProjectPaths=New-FilesName $psScriptRoot $SourceFI  $DestinationPathInfo
+    }
+    else 
+    { $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $Destination}
+     
+     #todo BUG le chemin peut être un chemin valide, mais ne pas exister
+     # $f=[System.IO.FileInfo]'C:\Temp\Result\Form1.ps1'
+     #le ficheir n'existepas ok, mais le parent non plus !
+       
+     #Teste s'il n'y a pas de conflit dans les switchs
+     #Problème potentiel: la form principale masque la console, la fermeture de la seconde fenêtre réaffichera la console
+    If ( $HideConsole -and $noLoadAssemblies )
+    { Write-Warning $ConvertFormMsgs.ParameterHideConsoleNotNecessary } 
+     
+    Write-Debug "Fin des contrôles."
+  } catch {
+      $PSCmdlet.WriteError(
+        (New-Object System.Management.Automation.ErrorRecord (
+           $_.Exception,                         
+           "AnalyzePathError", 
+           "InvalidArgument",
+           ("[{0}]" -f $Destination)
+           )  
+        )
+      )
+      return    
+  }
   # Collection des lignes utiles de InitializeComponent() : $Components
   # Note:
   # Le code généré automatiquement par le concepteur Windows Form est inséré 
@@ -176,10 +211,10 @@ function Convert-Form {
   [boolean] $isDebutCodeInit = $false
   [string] $FormName=[string]::Empty
   
-  Write-Verbose ($ConvertFormMsgs.BeginAnalyze -F $Source)
-    #todo erreur sur GC si fichier verrouillé
-    #Tout ou partie du fichier peut être verrouillé
-  foreach ($Ligne in Get-Content $Source -ErrorAction Stop)
+  Write-Verbose ($ConvertFormMsgs.BeginAnalyze -F $ProjectPaths.Source)
+
+  #Tout ou partie du fichier peut être verrouillé
+  foreach ($Ligne in Get-Content $ProjectPaths.Source -ErrorAction Stop)
   {
     if (! $isDebutCodeInit)
     {  # On démarre l'insertion à partir de cette ligne
@@ -188,13 +223,9 @@ function Convert-Form {
     }
     else 
     {  
-     #todo le 19/08/2014 une ligne vide entre deux déclarations et/ou contenant des tabulations
-     #arrête le traitement
-      # 			this.txt_name.TabIndex = 2;
-      # 
-      # 			this.txt_name.Validating += new System.ComponentModel.CancelEventHandler(this.Txt_nameValidating);         
+      if ($Ligne.Trim() -eq [string]::Empty) {continue}
      
-     # Fin de la méthode rencontrée ou ligne vide, on quitte l'itération. 
+       # Fin de la méthode rencontrée ou ligne vide, on quitte l'itération. 
       if (($Ligne.trim() -eq "}") -or ($Ligne.trim() -eq [string]::Empty)) {break}
       
        # C'est une ligne de code, on l'insére 
@@ -206,35 +237,60 @@ function Convert-Form {
         { 
            $FormName = $matches["nom"]
            Write-debug "Nom de la forme trouvé : '$FormName'"
-         }
+        }
         [void]$Components.Add($Ligne)
         Write-Debug "`t`t$Ligne"
-        if (! $STA)
-        {  #todo test sous PS v2 et v3
-           #todo localisation
-          if ( $Ligne.contains('System.Windows.Forms.WebBrowser') )
-           {Throw  new-object ConvertForm.ComponentNotSupportedException "Par défaut le composant WebBrowser ne peut fonctionner sous PowerShell V1.0."}
-          if ( $Ligne.contains("System.ComponentModel.BackgroundWorker") )
-           {Write-Warning "Par défaut les méthodes de thread du composant BackgroundWorker ne peuvent fonctionner sous PowerShell V1.0."}
-          if ( $Ligne -match "\s*this\.(.*)\.AllowDrop = true;$")
-           {Throw new-object ConvertForm.ComponentNotSupportedException  "Par défaut l'opération de drag and drop ne peut fonctionner sous PowerShell V1.0."}
-          if ( $Ligne -match "\s*this\.(.*)\.(AutoCompleteMode|AutoCompleteSource) = System.Windows.Forms.(AutoCompleteMode|AutoCompleteSource).(.*);$")
-           {Throw new-object ConvertForm.ComponentNotSupportedException  "Par défaut la fonctionnalité de saisie semi-automatique pour les contrôles ComboBox,TextBox et ToolStripTextBox doit être désactivée."}
-        }#STA
+       #todo test sous PS v2 et v3
+        $STAReason=[string]::Empty 
+        if ($Ligne.contains('System.Windows.Forms.WebBrowser') )
+        { $STAReason='component WebBrowser' }
+        if ($Ligne.contains('System.ComponentModel.BackgroundWorker') )
+        { $STAReason='component BackgroundWorker' }
+        if ( $Ligne -match "\s*this\.(.*)\.AllowDrop = true;$")
+        { $STAReason='Drag and Drop' }
+        if ( $Ligne -match "\s*this\.(.*)\.(AutoCompleteMode|AutoCompleteSource) = System.Windows.Forms.(AutoCompleteMode|AutoCompleteSource).(.*);$")
+        { $STAReason='AutoCompleteMode' }
+        if ( $STAReason -ne [string]::Empty)
+        { 
+          $STA=$true
+          Write-Warning ($ConvertFormMsgs.AddSTARequirement -F $STAReason)
+        }                  
       }
     }#else
   } #foreach
 
   Write-debug "Nom de la forme: '$FormName'"
   if (!$isDebutCodeInit)
-  { Throw (new-object ConvertForm.CSParseException( ($ConvertFormMsgs.InitializeComponentNotFound -F $Source ))) }
+  {  
+    $PSCmdlet.WriteError(
+    (New-Object System.Management.Automation.ErrorRecord (
+         #Recrée l'exception trappée avec un message personnalisé 
+	   (new-object ConvertForm.CSParseException( ($ConvertFormMsgs.InitializeComponentNotFound -F $ProjectPaths.Source ))),                         
+       "AnalyzeWinformDesignerFileError", 
+       "InvalidData",
+       ("[{0}]" -f $ProjectPaths.Source)
+       )  
+    )
+    )
+    return  
+  }
    
   if ($FormName -eq [string]::Empty) 
   {
      $WarningName=[string]::Empty
-     if ($Source -notMatch "(.*)\.designer\.cs$")
+     if ($ProjectPaths.Source -notMatch "(.*)\.designer\.cs$")
      { $WarningName=$ConvertFormMsgs.DesignerNameNotFound }
-     Throw (new-object ConvertForm.CSParseException(($ConvertFormMsgs.FormNameNotFound -F $Source,$WarningName)))  
+    $PSCmdlet.WriteError(
+     (New-Object System.Management.Automation.ErrorRecord (
+         #Recrée l'exception trappée avec un message personnalisé 
+	   (new-object ConvertForm.CSParseException(($ConvertFormMsgs.FormNameNotFound -F $ProjectPaths.Source,$WarningName))),                         
+       "AnalyzeWinformDesignerFileError", 
+       "InvalidData",
+       ("[{0}]" -f $ProjectPaths.Source)
+       )  
+     )
+    )
+    return
   }
   
   Backup-Collection $Components "Récupération des lignes de code, de la méthode InitializeComponent, effectuée."
@@ -301,10 +357,10 @@ function Convert-Form {
        {
          $IsUsedResources = $True
          $Components[$i]=Add-ManageRessources  $ProjectPaths.Sourcename
+         Write-Debug "IsUsedResources : $IsUsedResources"
          continue
        }
      }
-     Write-Debug "IsUsedResources : $IsUsedResources"
      
       # Recherche les noms des possibles ErrorProvider 
       #Ligne :  this.errorProvider2 = new System.Windows.Forms.ErrorProvider(this.components);
@@ -432,12 +488,20 @@ function Convert-Form {
       # Suppression du token d'appel de méthode. ATTENTION. Utile uniquement pour les constructeurs !
      $Ligne = $Ligne -replace "\(\)$",''
   
-      # Les lignes commentées le restent mais le traitement de la ligne courante se poursuit
+      # Les lignes commentées le restent et le traitement de la ligne courante se poursuit
      $Ligne = $Ligne -replace "^//",'#'
       
-      # Remplacement des types boolean par les variables dédiées 
+      # Remplacement des types boolean par les variables dédiées
+      #Pour une affection ou dans un appel de méthode 
      $Ligne = $Ligne -replace " true",' $true'
      $Ligne = $Ligne -replace " false",' $false'
+      
+      #Pour une affection uniquement
+     $Ligne = $Ligne -replace ' = null$',' = $null'
+
+      #Pour une affection uniquement
+      #bug FormName est connu mais l'objet n'est pas encore créer
+     $Ligne = $Ligne -replace ' = this$'," = `$$FormName"
   
       # Remplacement du format de typage des données
       #PB A quoi cela correspond-il ? si on remplace ici pb par la suite sur certaine ligne
@@ -502,7 +566,14 @@ function Convert-Form {
         #Remplace le token d'appel d'un constructeur d'instance des composants graphiques. 
         # this.PanelMainFill = new System.Windows.Forms.Panel();
       $Ligne = $Ligne.replace(' new ', ' New-Object ')
-       #Todo this.tableLayoutPanelFill.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+       #Todo BUG
+       #     this.tableLayoutPanelFill.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+       #     this.tableLayoutPanelFill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
+       # result :
+       #     $tableLayoutPanelFill.ColumnStyles.Add(New-Object System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F))
+       #
+       #projet : ConvertForm\TestsWinform\Test5Panel\FrmTest5PanelTableLayoutPanel.Designer.cs
+
       $ligne = $Ligne.replace('(new ', '(New-Object ')
       
       $Ligne = $Ligne -replace "(^.*= New-Object System.Drawing.SizeF\()([0-9]+)F, ([0-9]+)F\)$", '$1$2, $3)'
@@ -510,7 +581,32 @@ function Convert-Form {
       If ($IsUsedResources)
       {   
          $Ligne = $Ligne -replace "^(.*)= \(\((.*)\)\(resources.GetObject\(`"(.*)`"\)\)\)$", '$1= [$2] $Ressources["$3"]'
-  # todo
+  # Todo BUG
+# ConvertForm\TestsWinform\Test14BoitesDeDialogue\FrmTest14BoitesDeDialogue.Designer.cs
+#       #
+#       $toolStripMenuItem2.DropDownItems.AddRange(@(
+#       $toolStripMenuItem11))
+#       $toolStripMenuItem2.Name = "toolStripMenuItem2"
+#       resources.ApplyResources(this.toolStripMenuItem2, "toolStripMenuItem2")
+#       $toolStripMenuItem4.Name = "toolStripMenuItem4"
+#       resources.ApplyResources(this.toolStripMenuItem4, "toolStripMenuItem4")  
+      
+  #    resources.ApplyResources(this.rdbtnEnglish, "rdbtnEnglish");
+  #    this.rdbtnFrench.AccessibleDescription = null;
+  #    this.toolTipFr.SetToolTip(this.rdbtnEnglish, resources.GetString("rdbtnEnglish.ToolTip"));  
+  #
+  #result :
+#     $rdbtnEnglish.AccessibleDescription = null
+#     $rdbtnEnglish.AccessibleName = null
+#     resources.ApplyResources(this.rdbtnEnglish, "rdbtnEnglish")
+#     $rdbtnEnglish.BackgroundImage = null
+#     $rdbtnEnglish.Font = null
+#     $rdbtnEnglish.Name = "rdbtnEnglish"
+#     $rdbtnEnglish.TabStop = $true
+#     $toolTipFr.SetToolTip($rdbtnEnglish, resources.GetString("rdbtnEnglish.ToolTip"))  
+  #
+  #Projet: ConvertForm\TestsWinform\Test19Localisation\FrmMain.Designer.cs
+  #
   # révision de la gestion des ressources
   #       Write-host $ligne
   #        $Ligne = $Ligne -replace "^(.*)= \(\((.*)\)\(resources.GetObject\((.*)\)\)\)$", '$1= [$2] $Ressources[$3]'
@@ -520,6 +616,13 @@ function Convert-Form {
   #        Write-host $ligne
           
       }
+
+# BUG
+#  FrmTest6Composants.ps1   
+#    this.directorySearcher1.ClientTimeout = System.TimeSpan.Parse("-00:00:01");
+#    $directorySearcher1.ClientTimeout = System.TimeSpan.Parse("-00:00:01")
+# 
+#    this.process1.StartInfo.Password = null;
   
   # -------  Traite les propriétés .Font
       $MatchTmp =[Regex]::Match($Ligne,'^(.*)(\.Font =.*System.Drawing.Font\()(.*)\)$')   
@@ -574,7 +677,17 @@ function Convert-Form {
          $Ligne = $Ligne.Replace('System.Drawing.Color.FromArgb','[System.Drawing.Color]::FromArgb')
          [void]$LinesNewScript.Add($Ligne+')')
          continue
-      }
+      }                                                                 
+   # -------  Traite les appels de méthode statique
+     #System.Parse("-00:00:01");
+     #System.TimeSpan.Parse("-00:00:01");
+     #System.T1.T2.T3.Parse("-00:00:01");
+     # OK pour        this.directorySearcher1.ClientTimeout = System.TimeSpan.Parse("-00:00:01");
+     # MAIS PAS pour  this.directorySearcher1.ClientTimeout = $System.TimeSpan.Parse("-00:00:01");
+     #   un espace qui n'est pas suivi d'un signe dollar 
+     #todo regex incorrecte si + espaces :   ClientTimeout =    $System.TimeSpan.
+     $Ligne = $Ligne -replace '^(.*) =\s(?!\$)(.[^\s]*)\.(.[^\.\s]*?)\(','$1 = [$2]::$3(' 
+     
   # ------- Fertig !     
       [void]$LinesNewScript.Add($Ligne)
    } #foreach
@@ -612,14 +725,22 @@ function Convert-Form {
       }
   
       Write-Verbose ($ConvertFormMsgs.GenerateScript -F $ProjectPaths.Destination)
-       #todo Out-File exception sur fichier verrouillé
       Out-File -InputObject $LinesNewScript -FilePath $ProjectPaths.Destination -Encoding $Encoding -Width 999
       Write-Verbose $ConvertFormMsgs.SyntaxVerification 
       Test-PSScript -Filepath $ProjectPaths.Destination -IncludeSummaryReport
    } catch {
-     #[System.UnauthorizedAccessException] #fichier protégé en écriture
-     #[System.IO.IOException] #Espace insuffisant sur le disque.
-     
+       #[System.UnauthorizedAccessException] #fichier protégé en écriture
+       #[System.IO.IOException] #Espace insuffisant sur le disque.
+      $PSCmdlet.WriteError(
+        (New-Object System.Management.Automation.ErrorRecord (           
+           $_.Exception,                         
+           "CreateScriptError", 
+           "WriteError",
+           ("[{0}]" -f $Source)
+           )  
+        )
+      )  
+      return  
    }
   
    If ($noShowDialog -and $HideConsole)

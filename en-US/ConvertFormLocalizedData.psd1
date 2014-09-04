@@ -10,14 +10,14 @@
  InitializeComponentNotFound=La méthode InitializeComponent() est introuvable dans le fichier {0}.`n`rLa conversion ne peut s'effectuer.
  
  DesignerNameNotFound=`n`r.Vérifiez que le nom du fichier source est bien celui généré par le designer de Visual Studio : FormName.Designer.cs.
- FormNameNotFound=Le nom de la Form est introuvable dans la méthode InitializeComponent() du fichier '{0}'.`n`rLa conversion ne peut s'effectuer.`n`r{1}"  
+ FormNameNotFound=Le nom de la Form est introuvable dans la méthode InitializeComponent() du fichier '{0}'.`r`nLa conversion ne peut s'effectuer.`n`r{1}"  
  TransformationProgress=Transformation du code source ({0}) lignes
  TransformationProgressStatus=Veuillez patienter
  ReadChoiceCaption=Le fichier de destination existe déjà : '{0}'
  ReadChoiceMessage=Voulez-vous le remplacer ?
  OperationCancelled=Opération abandonnée.
  
- GenerateScript=Génération du script '{0}'`r`n
+ GenerateScript=Génération du script '{0}'
  SyntaxVerification=Vérification de la syntaxe du script généré.
  
  ConversionComplete=Conversion terminée : '{0}' 
@@ -25,4 +25,10 @@
  ParameterHideConsoleNotNecessary=Si vous convertissez une form secondaire l'usage du switch -HideConsole n'est pas nécessaire.`n`rSi c'est le cas, réexécutez votre appel sans préciser ce switch. 
  ParameterStringEmpty=Le paramètre '{0}' ne peut être une chaîne vide.
  ThisParameterRequiresThisParameter=Le paramètre '{0}' nécessite de déclarer le paramètre '{1}'.
+ AddSTARequirement=Ajout du contrôle du modéle de thread STA. Raison : {0}
+
+ LoadingAssemblies=# Chargement des assemblies externes
+ DisposeResources=# Libération des ressources
+ DisposeForm=# Libération de la Form 
 '@ 
+

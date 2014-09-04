@@ -115,6 +115,12 @@ Function New-PSPathInfo{
                #Un chemin comportant des jokers et renvoyant au moins un élement
                #positionne isItemExist à $true. 
               isItemExist=$False;
+              
+               #Indique si le parent de l'élément d'un provider existe ou pas.
+               #Un élément parent peut exister sans que l'élement existe et 
+               #Un élément parent peut ne pas exister.
+               #On cherche à savoir si on doit créer l'accès avant de créer l'élément. 
+              isParentItemExist=$False;
 
                #Précise si le provider indiqué par le nom de chemin $Name est celui du FileSystem
               isFileSystemProvider=$False;
@@ -160,7 +166,7 @@ Function New-PSPathInfo{
                
                #Contient la résolution nom d'un chemin du FileSystem.
                #Utilisable avec des API ou des programme externes. 
-               #Bug PS pour le e chemin 'C:\temp\...' ? 
+               #Bug PS pour le chemin 'C:\temp\...' ? 
                #cf. ResolvedPSPath
                Win32PathName=$null
              }          
@@ -310,10 +316,25 @@ Function New-PSPathInfo{
      try {
        #Le globbing n'est pas pris en compte
        if ($isLiteral)
-       { $Infos.isItemExist= $ExecutionContext.InvokeProvider.Item.Exists(([Management.Automation.WildcardPattern]::Escape($Infos.ResolvedPSPath)),$false,$false) } 
+       { 
+         $EscapePath=[Management.Automation.WildcardPattern]::Escape($Infos.ResolvedPSPath)
+         $Infos.isItemExist= $ExecutionContext.InvokeProvider.Item.Exists($EscapePath,$false,$false)
+         
+         if ($Infos.isItemExist)
+         { $Infos.isParentItemExist=$true }
+         else
+         { $Infos.isParentItemExist=$ExecutionContext.InvokeProvider.Item.Exists(($pathHelper.ParseParent($EscapePath,'')),$false,$false) }
+       } 
        else 
-       { $Infos.isItemExist= $ExecutionContext.InvokeProvider.Item.Exists($Infos.ResolvedPSPath,$false,$false) }
+       { 
+         $Infos.isItemExist= $ExecutionContext.InvokeProvider.Item.Exists($Infos.ResolvedPSPath,$false,$false)
+         if ($Infos.isItemExist)
+         { $Infos.isParentItemExist=$true }
+         else
+         { $Infos.isParentItemExist=$ExecutionContext.InvokeProvider.Item.Exists(($pathHelper.ParseParent($Infos.ResolvedPSPath,'')),$false,$false) } 
+       }
        Write-Debug "L'item existe-t-il ? $($Infos.isItemExist)" #<%REMOVE%>
+       Write-Debug "Le parent de l'item existe-t-il ? $($Infos.isParentItemExist)" #<%REMOVE%>
        if ($Infos.isItemExist)
        {
         try {

@@ -3,8 +3,6 @@
 # Objet   : Regroupe des fonctions de transformation de 
 #           code CS en code PowerShell.
 
-#todo la génération de code peut utiliser des string localisées.
-
 Import-LocalizedData -BindingVariable TransformMsgs -Filename TransformLocalizedData.psd1 -EA Stop
 
  #Création du header
@@ -43,8 +41,7 @@ Function Add-EventComponent([String] $ComponentName, [String] $EventName)
 { #Crée et ajoute un événement d'un composant.
   #Par défaut le scriptbloc généré affiche un message d'information
 
-   #todo localisation
-  $UnderConstruction = "[void][System.Windows.Forms.MessageBox]::Show(`"L'évènement $ComponentName.Add_$EventName n'est pas implémenté.`")"
+  $UnderConstruction = "[void][System.Windows.Forms.MessageBox]::Show(`"$($TransformMsgs.AddEventComponent)`")"
    #La syntaxe d'ajout d'un délégué est : Add_NomEvénément 
    # où le nom de l'événement est celui du SDK .NET
    #On construit le nom de la fonction appellée par le gestionnaire d'événement
@@ -81,17 +78,16 @@ function Add-SpecialEventForm{
    # Form1.topmost=$true est inopérant
  $Shown  = '${0}.Add_Shown({{{1}${0}.Activate()}})' -F $FormName,$CallHidefnct
 
- #todo localisation
 # Here-string  
 @"
 $Entête 
-`t# `$this est égal au paramètre sender (object)
-`t# `$_ est égal au paramètre  e (eventarg)
+`t# `$this parameter is equal to the sender (object)
+`t# `$_ is equal to the parameter e (eventarg)
 
-`t# Déterminer la raison de la fermeture :
+`t# The CloseReason property indicates a reason for the closure :
 `t#   if ((`$_).CloseReason -eq [System.Windows.Forms.CloseReason]::UserClosing)
 
-`t#Autorise la fermeture
+`t#Sets the value indicating that the event should be canceled.
 `t(`$_).Cancel= `$False
 }
 $Close
@@ -298,9 +294,12 @@ function New-FilesName{
   #Le fichier de ressource posséde une autre construction que le nom du fichier source
   #On garde le nom de la Form car on peut avoir + fichiers .Designer.cs
    # en entrée                 : -Source C:\VS\Projet\PS\Form1.Designer.cs -Destination C:\Temp\Destination.ps1
-   # fichier ressource associé : C:\VS\Projet\PS\Form1.resx        
-   # fichier ressource généré  : C:\Temp\Form1.ressources
+   # fichier ressource associé : C:\VS\Projet\PS\Form1.resx   
+   #
+   # fichier script généré     : C:\Temp\Destination.ps1     
    # fichier de log généré     : C:\Temp\Destination.Log
+   # fichier ressource généré  : C:\Temp\Form1.ressources
+      
   $ProjectPaths=@{
      Source=$SourceFI.FullName
      SourcePath = $SourceFI.DirectoryName
@@ -323,7 +322,8 @@ function New-FilesName{
      }
   }
 
-  $DestinationFI=New-object System.IO.FileInfo $ProjectPaths.Destination
+  $DestinationFI=New-object System.IO.FileInfo $ProjectPaths.Destination  
+    
   $ProjectPaths.DestinationPath = $DestinationFI.DirectoryName
   $ProjectPaths.DestinationName = ([System.IO.Path]::GetFilenameWithoutExtension($DestinationFi.FullName))
 
@@ -391,11 +391,6 @@ function New-RessourcesFile{
 function Add-ErrorProvider([String] $ComponentName, [String] $FormName)
 { #Ajoute le texte suivant après la ligne de création de la form,
   #le component ErrorProvider référence la Form contenant les composants qu'il doit gérer
-   
-  #  #
-  #  # errorProviderX
-     #
-  #  $errorProviderX.ContainerControl = $Form1
 
 # Here-string  
 @"

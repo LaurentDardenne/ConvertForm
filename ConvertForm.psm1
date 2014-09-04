@@ -12,9 +12,6 @@ $InitializeLogging=$MyInvocation.MyCommand.ScriptBlock.Module.NewBoundScriptBloc
  #Texte du module 
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
  
- #Texte du script généré
-Import-LocalizedData -BindingVariable CodeFormMsgs -Filename CodeFormLocalizedData.psd1 -EA Stop
-
  #On charge les méthodes de construction et d'analyse du fichier C#
 Import-Module "$psScriptRoot\Transform.psm1" -DisableNameChecking -Verbose:$false
 
@@ -123,23 +120,34 @@ function Convert-Form {
   else 
   { $Destination=[String]::Empty } 
  
+  #Valide les prérequis concernant les fichiers
   try { 
-     #Source est renseigné, on vérifie sa validité   
     $SourcePathInfo=New-PSPathInfo -Path ($Source.Trim())|Add-FileSystemValidationMember
+    $FileName=$SourcePathInfo.GetFileName()
     
-     #Le PSPath doit exister, ne pas contenir de globbing et être sur le FileSystem
+     #Le PSPath doit exister, ne pas être un répertoire, ne pas contenir de globbing et être sur le FileSystem
+     #On doit lit un fichier.
+     #On précise le raison de de l'erreur
     if (!$SourcePathInfo.isFileSystemItemFound()) 
     {
-      if ($SourcePathInfo.isFileSystemProvider)
-      {Throw (New-Object System.ArgumentException($ConvertFormMsgs.FileSystemPathRequired,'Source')) }
+      if (!$SourcePathInfo.isDriveExist) 
+      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.DriveNotFound  -F $FileName),'Source')) } 
+
+         #C'est un chemin relatif, le drive courant appartient-il au provider FileSystem ? 
+      if (!$SourcePathInfo.isAbsolute -and !$SourcePathInfo.isCurrentLocationFileSystem)
+      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.FileSystemPathRequiredForCurrentLocation -F $FileName),'Source')) }
+   
+      if (!$SourcePathInfo.isFileSystemProvider)
+      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.FileSystemPathRequired -F $FileName),'Source')) }
+
       if ($SourcePathInfo.isWildcard)
-      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $SourcePathInfo.GetFileName()),'Source'))}
-      elseif (!$SourcePathInfo.isDriveExist) 
-      {Throw (New-Object System.ArgumentException($ConvertFormMsgs.DriveNotFound,'Source')) } 
-      elseif(!$SourcePathInfo.isItemExist)
-      {Throw (New-Object System.ArgumentException($ConvertFormMsgs.ItemNotFound,'Source')) } 
+      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $FileName),'Source'))}
+      else
+      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ItemNotFound -F $FileName),'Source')) } 
     }
-    $SourceFI=$SourcePathInfo.GetFileName().GetasFileInfo()
+    $SourceFI=$FileName.GetasFileInfo()
+    if ($SourceFI.Attributes -eq 'Directory')
+    { Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ParameterMustBeAfile -F $FileName),'Source')) } 
   } catch {
       $PSCmdlet.WriteError(
         (New-Object System.Management.Automation.ErrorRecord (
@@ -154,33 +162,39 @@ function Convert-Form {
   }      
   
   try {
-     #Destination est renseigné, on vérifie sa validité  
     if ($Destination -ne [String]::Empty)
     {
       #Le PSPath doit être valide, ne pas contenir de globbing et être sur le FileSystem
+      #Le PSPath peut ne pas exister mais son parent doit exister.
+      #On doit créer un fichier.
+      #On précise le raison de de l'erreur
       $DestinationPathInfo=New-PSPathInfo -Path $Destination|Add-FileSystemValidationMember
+      $FileName=$DestinationPathInfo.GetFileName()
+      
       if (!$DestinationPathInfo.IsaValidNameForTheFileSystem()) 
       {
-        if ($DestinationPathInfo.isFileSystemProvider)
-        {Throw (New-Object System.ArgumentException($ConvertFormMsgs.FileSystemPathRequired -F 'Destination')) }
-        if ($DestinationPathInfo.isWildcard)
-        {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $Destination),'Destination')) }
-        elseif (!$DestinationPathInfo.isDriveExist) 
-        {Throw (New-Object System.ArgumentException($ConvertFormMsgs.ItemNotFound,'Destination')) }  
-         #C'est un chemin relatif,le drive courant 
-         #appartient-il au provider FS ? 
+        if (!$DestinationPathInfo.isDriveExist) 
+        {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.DriveNotFound  -F $FileName),'Destination')) }  
+
         if (!$DestinationPathInfo.isAbsolute -and !$DestinationPathInfo.isCurrentLocationFileSystem)
-        {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.FileSystemPathRequiredForCurrentLocation -F $DestinationPathInfo.ResolvedPSPath),'Destination')) }
+        {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.FileSystemPathRequiredForCurrentLocation -F $FileName),'Destination')) }
+        
+        if (!$DestinationPathInfo.isFileSystemProvider)
+        {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.FileSystemPathRequired -F $FileName),'Destination')) }
+        
+        if ($DestinationPathInfo.isWildcard)
+        {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $FileName),'Destination')) }
       }
+      elseif (!$DestinationPathInfo.isParentItemExist)
+      {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.PathNotFound -F $FileName),'Destination')) }
+      elseif ($ExecutionContext.InvokeProvider.Item.IsContainer($Filename))
+      { Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ParameterMustBeAfile -F $FileName),'Destination')) } 
+      
       $ProjectPaths=New-FilesName $psScriptRoot $SourceFI  $DestinationPathInfo
     }
     else 
     { $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $Destination}
      
-     #todo BUG le chemin peut être un chemin valide, mais ne pas exister
-     # $f=[System.IO.FileInfo]'C:\Temp\Result\Form1.ps1'
-     #le ficheir n'existepas ok, mais le parent non plus !
-       
      #Teste s'il n'y a pas de conflit dans les switchs
      #Problème potentiel: la form principale masque la console, la fermeture de la seconde fenêtre réaffichera la console
     If ( $HideConsole -and $noLoadAssemblies )
@@ -426,7 +440,7 @@ function Convert-Form {
      Write-Debug "[Ajout Code] chargement des assemblies"
      $Assemblies=@('System.Windows.Forms','System.Drawing')
      
-     [void]$LinesNewScript.Add($CodeFormMsgs.LoadingAssemblies)
+     [void]$LinesNewScript.Add($ConvertFormMsgs.LoadingAssemblies)
      Add-LoadAssembly $LinesNewScript $Assemblies
   }
   
@@ -500,7 +514,8 @@ function Convert-Form {
      $Ligne = $Ligne -replace ' = null$',' = $null'
 
       #Pour une affection uniquement
-      #bug FormName est connu mais l'objet n'est pas encore créer
+      #todo bug d'affectation :
+      # FormName est connu mais l'objet n'est pas encore créer
      $Ligne = $Ligne -replace ' = this$'," = `$$FormName"
   
       # Remplacement du format de typage des données
@@ -697,7 +712,7 @@ function Convert-Form {
    If ($IsUsedResources)
    {  
       Write-Debug "[Ajout Code]Libération des ressources"
-      [void]$LinesNewScript.Add($CodeFormMsgs.DisposeResources)
+      [void]$LinesNewScript.Add($ConvertFormMsgs.DisposeResources)
       [void]$LinesNewScript.Add('$Reader.Close()') 
    }
    
@@ -705,7 +720,7 @@ function Convert-Form {
    { 
       Write-Debug "[Ajout Code] Appel à la méthode ShowDialog/Dispose"
       [void]$LinesNewScript.Add("`$ModalResult=`$$FormName.ShowDialog()") 
-      [void]$LinesNewScript.Add($CodeFormMsgs.DisposeForm)
+      [void]$LinesNewScript.Add($ConvertFormMsgs.DisposeForm)
        #Showdialog() need explicit Dispose()
       [void]$LinesNewScript.Add("`$$FormName.Dispose()")
    }

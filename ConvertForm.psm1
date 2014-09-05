@@ -443,6 +443,9 @@ function Convert-Form {
      [void]$LinesNewScript.Add($ConvertFormMsgs.LoadingAssemblies)
      Add-LoadAssembly $LinesNewScript $Assemblies
   }
+  #On ajoute la création de la form avant tout autre composant
+  #Le code de chaque composant référençant cet objet est assuré de son existence
+  [void]$LinesNewScript.Add("`$$FormName = New-Object System.Windows.Forms.Form`r`n")
   
   Write-Debug "Début de la troisième analyse"
   $progress=0
@@ -506,17 +509,16 @@ function Convert-Form {
      $Ligne = $Ligne -replace "^//",'#'
       
       # Remplacement des types boolean par les variables dédiées
-      #Pour une affection ou dans un appel de méthode 
+      #Pour une affectation ou dans un appel de méthode 
      $Ligne = $Ligne -replace " true",' $true'
      $Ligne = $Ligne -replace " false",' $false'
       
-      #Pour une affection uniquement
+      #Pour une affectation uniquement
      $Ligne = $Ligne -replace ' = null$',' = $null'
 
-      #Pour une affection uniquement
-      #todo bug d'affectation :
-      # FormName est connu mais l'objet n'est pas encore créer
-     $Ligne = $Ligne -replace ' = this$'," = `$$FormName"
+      #Pour une affectation uniquement
+      #todo A vérifier bug *corrigé* d'affectation :  FormName est connu mais l'objet n'est pas encore créer
+      $Ligne = $Ligne -replace ' = this$'," = `$$FormName"
   
       # Remplacement du format de typage des données
       #PB A quoi cela correspond-il ? si on remplace ici pb par la suite sur certaine ligne
@@ -551,7 +553,7 @@ function Convert-Form {
       {
          $IsTraiteMethodesForm = $True
           # On ajoute le constructeur de la Form
-         [void]$LinesNewScript.Add("`$$FormName = New-Object System.Windows.Forms.Form")
+         #todo test [void]$LinesNewScript.Add("`$$FormName = New-Object System.Windows.Forms.Form")
           #On ajoute les possibles ErrorProvider
          if ($ErrorProviders.Count -gt 0)
          { 
@@ -741,8 +743,6 @@ function Convert-Form {
   
       Write-Verbose ($ConvertFormMsgs.GenerateScript -F $ProjectPaths.Destination)
       Out-File -InputObject $LinesNewScript -FilePath $ProjectPaths.Destination -Encoding $Encoding -Width 999
-      Write-Verbose $ConvertFormMsgs.SyntaxVerification 
-      Test-PSScript -Filepath $ProjectPaths.Destination -IncludeSummaryReport
    } catch {
        #[System.UnauthorizedAccessException] #fichier protégé en écriture
        #[System.IO.IOException] #Espace insuffisant sur le disque.
@@ -757,7 +757,12 @@ function Convert-Form {
       )  
       return  
    }
-  
+
+   Write-Verbose $ConvertFormMsgs.SyntaxVerification 
+   $SyntaxErrors=@(Test-PSScript -Filepath $ProjectPaths.Destination -IncludeSummaryReport)
+   if ($SyntaxErrors.Count -gt 0)
+   { Write-Error -Message ($ConvertFormMsgs.SyntaxError -F $ProjectPaths.Destination) -Category "SyntaxError" -ErrorId "CreateScriptError" -TargetObject  $ProjectPaths.Destination }
+     
    If ($noShowDialog -and $HideConsole)
    { Write-Verbose $ConvertFormMsgs.CallShowWindow }
    
@@ -770,3 +775,61 @@ function Convert-Form {
    Write-Verbose ($ConvertFormMsgs.ConversionComplete-F $ProjectPaths.Source)
   }#process
 } #Convert-Form
+
+function Test-PSScript { 
+# .ExternalHelp ConvertForm-Help.xml           
+  [CmdletBinding()] 
+    [OutputType([System.String])] 
+ #Valide la syntaxe d'un fichier powershell (ps1,psm1,psd1)
+ #From http://blogs.microsoft.co.il/blogs/scriptfanatic/archive/2009/09/07/parsing-powershell-scripts.aspx 
+   param( 
+      [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]  
+      [ValidateNotNullOrEmpty()]  
+      [Alias('PSPath','FullName')]  
+      [System.String[]] $FilePath, 
+
+      [Switch]$IncludeSummaryReport 
+   ) 
+
+   begin 
+   { $total=$fails=$FileUnknown=0 }   
+
+   process 
+   { 
+       $FilePath | 
+        Foreach-Object { 
+           if(Test-Path -Path $_ -PathType Leaf) 
+           { 
+              $Path = Convert-Path -Path $_  
+  
+              $Errors = $null 
+              $Content = Get-Content -Path $path  
+              $Tokens = [System.Management.Automation.PsParser]::Tokenize($Content,[ref]$Errors) 
+              if($Errors -ne $null) 
+              { 
+                 $fails++ 
+                 $Errors | 
+                  Foreach-Object {  
+                    $CurrentError=$_
+                    $CurrentError.Token | 
+                     Add-Member -MemberType NoteProperty -Name Path -Value $Path -PassThru | 
+                     Add-Member -MemberType NoteProperty -Name ErrorMessage -Value $CurrentError.Message -PassThru 
+                 } 
+              } 
+             $total++
+           }#if 
+           else 
+           { Write-Warning "File unknown :'$_'";$FileUnknown++ } 
+       }#for 
+   }#process  
+
+   end  
+   { 
+      if($IncludeSummaryReport)  
+      { 
+         Write-Verbose "$total script(s) processed, $fails script(s) contain syntax errors,  $FileUnknown file(s) unknown." 
+      } 
+   } 
+}#Test-PSScript
+
+Export-ModuleMember -Function Convert-Form,Test-PSScript 

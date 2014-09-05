@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace Base
+namespace Test20ExternalReferences
 {
     static class Program
     {
@@ -13,7 +14,7 @@ namespace Base
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FrmBase());
+            Application.Run(new Form1());
         }
     }
 }

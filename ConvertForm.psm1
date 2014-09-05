@@ -17,8 +17,6 @@ Import-Module "$psScriptRoot\Transform.psm1" -DisableNameChecking -Verbose:$fals
 
  #Analyse d'un pspath
 ."$psScriptRoot\Tools\New-PSPathInfo.ps1"
- #validation d'un fichier PS1 généré
-."$psScriptRoot\Tools\Test-PSScript.Ps1"
 
 try {
   $OLDWP,$WarningPreference=$WarningPreference,'SilentlyContinue'
@@ -517,7 +515,6 @@ function Convert-Form {
      $Ligne = $Ligne -replace ' = null$',' = $null'
 
       #Pour une affectation uniquement
-      #todo A vérifier bug *corrigé* d'affectation :  FormName est connu mais l'objet n'est pas encore créer
       $Ligne = $Ligne -replace ' = this$'," = `$$FormName"
   
       # Remplacement du format de typage des données
@@ -553,7 +550,7 @@ function Convert-Form {
       {
          $IsTraiteMethodesForm = $True
           # On ajoute le constructeur de la Form
-         #todo test [void]$LinesNewScript.Add("`$$FormName = New-Object System.Windows.Forms.Form")
+         [void]$LinesNewScript.Add("# $FormName")
           #On ajoute les possibles ErrorProvider
          if ($ErrorProviders.Count -gt 0)
          { 

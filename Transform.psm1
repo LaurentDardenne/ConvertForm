@@ -343,9 +343,9 @@ function New-RessourcesFile{
   Write-Debug 'Compile les ressources'
    #On génére le fichier de ressources
    #todo + versions de resgen ?
-   #todo : http://blogs.msdn.com/b/visualstudio/archive/2010/06/18/resgen-exe-error-an-attempt-was-made-to-load-a-program-with-an-incorrect-format.aspx
+   #   http://blogs.msdn.com/b/visualstudio/archive/2010/06/18/resgen-exe-error-an-attempt-was-made-to-load-a-program-with-an-incorrect-format.aspx
    #        connect.microsoft.com/VisualStudio/feedback/details/532584/error-when-compiling-resx-file-seems-related-to-beta2-bug-5252020
-   #        http://stackoverflow.com/questions/9190885/could-not-load-file-or-assembly-system-drawing-or-one-of-its-dependencies-erro
+   #  http://stackoverflow.com/questions/9190885/could-not-load-file-or-assembly-system-drawing-or-one-of-its-dependencies-erro
   $Resgen="$psScriptRoot\ResGen.exe" 
   if ( !(Test-Path $Resgen))
   { Write-Error ($TransformMsgs.ResgenNotFound -F $Resgen) }

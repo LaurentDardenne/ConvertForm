@@ -21,6 +21,7 @@
  
  GenerateScript=Génération du script '{0}'
  SyntaxVerification=Vérification de la syntaxe du script généré.
+ SyntaxError=La syntaxe du script généré contient des erreurs. Pour obtenir le détail des erreurs, exécutez : Test-PSScript '{0}' 
  
  ConversionComplete=Conversion terminée : '{0}' 
  

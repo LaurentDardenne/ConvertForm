@@ -73,6 +73,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test20ClassLibrary", "Test2
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test20ExternalReferences", "Test20ExternalReferences\Test20ExternalReferences.csproj", "{201E9E8F-B545-4BF3-AD13-D3288F726F5F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test21LiteralPath[AG]Naming", "Test21LiteralPath[AG]Naming\Test21LiteralPath[AG]Naming.csproj", "{B29005E4-CC76-4070-B023-E6037BCA71D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -421,6 +423,16 @@ Global
 		{201E9E8F-B545-4BF3-AD13-D3288F726F5F}.Release|Mixed Platforms.Build.0 = Release|x86
 		{201E9E8F-B545-4BF3-AD13-D3288F726F5F}.Release|x86.ActiveCfg = Release|x86
 		{201E9E8F-B545-4BF3-AD13-D3288F726F5F}.Release|x86.Build.0 = Release|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Debug|x86.ActiveCfg = Debug|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Debug|x86.Build.0 = Debug|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Release|Any CPU.ActiveCfg = Release|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Release|Mixed Platforms.Build.0 = Release|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Release|x86.ActiveCfg = Release|x86
+		{B29005E4-CC76-4070-B023-E6037BCA71D9}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,7 @@
+Le databinding permet de lier une collection de données à un composant graphique.
+Celle collection est la source d'informations à partir de laquelle le composant affiche des données. 
+
+Les modifications de la liste sont automatiquement répercutées dans le composant.
+
+voir :
+http://www.microsoft.com/downloads/details.aspx?FamilyID=E91EFC77-A93E-4BA0-9790-69658383C412&displaylang=fr

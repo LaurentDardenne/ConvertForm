@@ -1,0 +1,10 @@
+Saisissez un nombre dans le textbox du haut, pas d'erreur de validation
+Saisissez un mot dans le textbox du haut, provoque une erreur de validation.
+
+Le textbox du bas n'a pas de régle da validation des informations saisies.
+
+Chaque champ de saisie utilisant ce composant doit déclarer les événements OnEnter et OnValidating.
+
+Ce composant affiche un icone d'information en cas de saisie invalide, mais ne bloque pas la fermeture de la fenêtre.
+C'est à vous de mettre en place ce comportement.
+

@@ -14,10 +14,5 @@ namespace Test21LiteralPath_AG_Naming
         {
             InitializeComponent();
         }
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
     }
 }

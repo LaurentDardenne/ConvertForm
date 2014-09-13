@@ -2,7 +2,8 @@
  FileSystemPathRequired=Le chemin doit pointer sur le FileSystem : {0}
  FileSystemPathRequiredForCurrentLocation=L'usage de chemin relatif, nécessite que le chemin courant pointe sur le système de fichier : {0}
  GlobbingUnsupported=Le globbing n'est pas supporté pour ce paramètre : {0} 
- ParameterMustBeAfile=Le paramètre doit être un nom de fichier : {0}
+ ParameterMustBeAfile=Le paramètre doit référencer un nom de fichier et pas un nom de répertoire : {0}
+ ParameterMustBeAdirectory=Le paramètre doit référencer un nom de répertoire et pas un nom de fichier : {0}
  DriveNotFound=Le lecteur indiqué n'existe pas : '{0}'  
  ItemNotFound=Le fichier n'existe pas : '{0}'
  PathNotFound=Le répertoire n'existe pas : '{0}'  
@@ -27,7 +28,7 @@
  
  ParameterHideConsoleNotNecessary=Si vous convertissez une form secondaire l'usage du switch -HideConsole n'est pas nécessaire. Si c'est le cas, réexécutez votre appel sans préciser ce switch. 
  ParameterStringEmpty=Le paramètre '{0}' ne peut être une chaîne vide.
- ThisParameterRequiresThisParameter=Le paramètre '{0}' nécessite de déclarer le paramètre '{1}'.
+ ParameterIsExclusif=Utilisez soit le paramètre 'Destination', soit le paramètre 'DestinationLiteral', mais pas les deux en même temps.
  AddSTARequirement=Ajout du contrôle du modéle de thread STA. Raison : {0}
 
  LoadingAssemblies=# Chargement des assemblies externes

@@ -281,6 +281,9 @@ Function New-PSPathInfo{
      
       #Pour 'c:\temp\MyTest[a' iswildcard vaut $true, mais le globbing est invalide, à priori la seule présence du [ renvoi $true  
       #Pour 'c:\temp\MyTest`[a' iswildcard vaut $false
+      #pour 'Frm[AZ]'    iswildcard vaut $true
+      #     'Frm`[AZ`]'   iswildcard vaut $false
+      #      Frm``[AZ``]' iswildcard vaut $true 
       #Si c'est un chemin littéral les caractères génériques ne peuvent être interprétés, car il générerait une exception
       if ($isLiteral)
       {  $infos.isWildCard=[Management.Automation.WildcardPattern]::ContainsWildcardCharacters(([Management.Automation.WildcardPattern]::Escape($CurrentPath)))}
@@ -315,8 +318,11 @@ Function New-PSPathInfo{
      #Implémente Path et LiteralPath
      try {
        #Le globbing n'est pas pris en compte
+       Write-Debug "isLiteral : $isLiteral" #<%REMOVE%>
        if ($isLiteral)
        { 
+          #si le path est déjà échappé ( File`[az`]) l'analyse est fausse.
+          #si le path est échappé ainsi ( File``[az``])  alors iswildcard est faux
          $EscapePath=[Management.Automation.WildcardPattern]::Escape($Infos.ResolvedPSPath)
          $Infos.isItemExist= $ExecutionContext.InvokeProvider.Item.Exists($EscapePath,$false,$false)
          

@@ -21,7 +21,5 @@
     #TypesToProcess     = @( 'TypeData\?.Types.ps1xml')
     
     #RequiredAssemblies = @((Join-Path $psScriptRoot '?.dll'))
-  
-    RequiredModules=@{ModuleName="Log4Posh";GUID="f796dd07-541c-4ad8-bfac-a6f15c4b06a0"; ModuleVersion="1.1.0.0"}                           
 }
 

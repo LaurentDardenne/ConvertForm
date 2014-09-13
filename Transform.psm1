@@ -293,11 +293,11 @@ function New-FilesName{
 
   #Le fichier de ressource posséde une autre construction que le nom du fichier source
   #On garde le nom de la Form car on peut avoir + fichiers .Designer.cs
-   # en entrée                 : -Source C:\VS\Projet\PS\Form1.Designer.cs -Destination C:\Temp\Destination.ps1
+   # en entrée                 : -Source C:\VS\Projet\PS\Form1.Designer.cs -Destination C:\Temp
    # fichier ressource associé : C:\VS\Projet\PS\Form1.resx   
    #
-   # fichier script généré     : C:\Temp\Destination.ps1     
-   # fichier de log généré     : C:\Temp\Destination.Log
+   # fichier script généré     : C:\Temp\Form1.ps1     
+   # fichier de log généré     : C:\Temp\Form1.ressources.Log
    # fichier ressource généré  : C:\Temp\Form1.ressources
       
   $ProjectPaths=@{
@@ -306,22 +306,20 @@ function New-FilesName{
      SourceName = ([System.IO.Path]::GetFilenameWithoutExtension($SourceFI.FullName)) -replace '.designer',''
   }
  
-  if ($Destination -eq [String]::Empty)
+  if ($PSBoundParameters.ContainsKey('Destination'))
   { 
-      #Construit le nom à partir du nom de fichier source
-     $ProjectPaths.Destination="$($ProjectPaths.SourcePath)\$($ProjectPaths.SourceName).ps1"
-  }
-  else 
-  { 
-      #Récupère le nom analysé
+      #Récupère le nom de répertoire analysé
      $ProjectPaths.Destination=$Destination.GetFileName()
-     if ([System.IO.Path]::GetExtension($ProjectPaths.Destination) -eq [string]::Empty)
-     {
-        $ProjectPaths.Destination=[System.IO.Path]::ChangeExtension($ProjectPaths.Destination,'.ps1')
-        Write-Verbose $TransformMsgs.AddPSExtension
-     }
   }
-
+  else
+  { 
+      #On utilise le répertoire du fichier source
+     $ProjectPaths.Destination=$ProjectPaths.SourcePath
+  }
+  
+   #Construit le nom à partir du nom de fichier source
+  $ProjectPaths.Destination+="\$($ProjectPaths.SourceName).ps1"
+  
   $DestinationFI=New-object System.IO.FileInfo $ProjectPaths.Destination  
     
   $ProjectPaths.DestinationPath = $DestinationFI.DirectoryName
@@ -334,35 +332,39 @@ function New-FilesName{
   $ProjectPaths 
 } #New-FilesName
 
-function New-RessourcesFile{ 
+function New-RessourcesFile{
 #Compile le fichier contenant les ressources d'un formulaire, ex : Form1.resx
  param (
-  $ProjectPaths
+  $ProjectPaths,
+  [switch] $isLiteral
  ) 
   
-  Write-Debug 'Compile les ressources'
+  Write-Verbose 'Compile les ressources'
    #On génére le fichier de ressources
    #todo + versions de resgen ?
    #   http://blogs.msdn.com/b/visualstudio/archive/2010/06/18/resgen-exe-error-an-attempt-was-made-to-load-a-program-with-an-incorrect-format.aspx
    #        connect.microsoft.com/VisualStudio/feedback/details/532584/error-when-compiling-resx-file-seems-related-to-beta2-bug-5252020
    #  http://stackoverflow.com/questions/9190885/could-not-load-file-or-assembly-system-drawing-or-one-of-its-dependencies-erro
   $Resgen="$psScriptRoot\ResGen.exe" 
+   #todo suppose que psScriptRoot ne contient pas de globbing 
   if ( !(Test-Path $Resgen))
   { Write-Error ($TransformMsgs.ResgenNotFound -F $Resgen) }
   else
   {
 	 $SrcResx = Join-Path $ProjectPaths.SourcePath ($ProjectPaths.SourceName+'.resx')
-	 if ( !(Test-Path $SrcResx))
-	 { Write-Error ($TransformMsgs.ResourceFileNotFound -F $SrcResx) }
-	 else
-	 {
-	   $DestResx = Join-Path $ProjectPaths.DestinationPath ($ProjectPaths.SourceName+'.resources')
-	   $Log=Join-Path $ProjectPaths.DestinationPath ("$($ProjectPaths.DestinationName).log")
-	     #Message de debug
-       'Resgen','SrcResx','DestResx','Log'|
-         Get-Variable |
-         Foreach { Write-Debug ('{0}={1}' -F $_.Name,$_.Value) }
+     $DestResx = Join-Path $ProjectPaths.DestinationPath ($ProjectPaths.SourceName+'.resources')
+     $Log="$DestResx.log"
+     'Resgen','SrcResx','DestResx','Log'|
+       Get-Variable |
+       Foreach { Write-Debug ('{0}={1}' -F $_.Name,$_.Value) }
+     
+     if ($isLiteral)
+     { $FileResourceExist=Test-Path -LiteralPath $SrcResx }
+     else
+     { $FileResourceExist=Test-Path -Path $SrcResx }
 	 
+     if ($FileResourceExist)
+	 {
 	   if ((Test-Path $Log))
 	   { 
 	     try{
@@ -380,13 +382,18 @@ function New-RessourcesFile{
        { Write-Verbose ($TransformMsgs.CreateResourceFile -F $DestResx) }
        
        try {
-         $ResultExec|Out-File $Log -Width 999
+         if ($isLiteral)
+         { $ResultExec|Out-File -Literal $Log -Width 999 }
+         else
+         { $ResultExec|Out-File -Path $Log -Width 999 }
        }catch {
           Write-Warning ($TransformMsgs.CreateLogFileError -F $Log)
        } 
 	 }
+     else
+     { Write-Error ($TransformMsgs.ResourceFileNotFound -F $SrcResx) }
   } 
-}
+} #New-RessourcesFile
 
 function Add-ErrorProvider([String] $ComponentName, [String] $FormName)
 { #Ajoute le texte suivant après la ligne de création de la form,
@@ -480,5 +487,5 @@ function Hide-Window([IntPtr] $WindowHandle=(Get-Process –id $pid).MainWindowHan
 '@
 } #Add-Win32FunctionsWrapper
 
-New-Variable ChoiceNO -Option ReadOnly -Value ([int]1) -EA SilentlyContinue
+New-Variable ChoiceNO -Value ([int]1) -EA SilentlyContinue
 Export-ModuleMember -Variable ChoiceNO -Function * 

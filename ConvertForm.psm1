@@ -1,12 +1,5 @@
 #PowerShell Form Converter
 
-   #Récupère le code d'une fonction publique du module Log4Posh (Prérequis)
-   #et l'exécute dans la portée du module
-$Script:lg4n_ModuleName=$MyInvocation.MyCommand.ScriptBlock.Module.Name
-$InitializeLogging=$MyInvocation.MyCommand.ScriptBlock.Module.NewBoundScriptBlock(${function:Initialize-Log4NetModule})
-&$InitializeLogging $Script:lg4n_ModuleName "$psScriptRoot\Log4Net.Config.xml"
-
- #Texte du module 
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
  
  #On charge les méthodes de construction et d'analyse du fichier C#
@@ -80,52 +73,27 @@ try {
  $WarningPreference=$OLDWP  
 }
 
-#todo ajout path et LitteralPath
-#renommer Source en path et ajouter LitteralPath 
-#test avec VS frm[A-C], vérifier les noms des fichier générés
-
-#Alias PSPath sur Literral 
-# Function Test { 
-#  [CmdletBinding(DefaultParameterSetName="Path")] 
-#  param( 
-#      [parameter(Mandatory=$True,ValueFromPipeline=$True, ParameterSetName="Path")]
-#    [string]$Path,
-#    
-#      [parameter(Mandatory=$True,ValueFromPipeline=$True, ParameterSetName="LiteralPath")]
-#    [string]$LiteralPath,
-#    
-#    
-#    $ParamNull='Valeur par défaut'
-#   )
-# begin {   Write-Warning "Begin ParamNull=$ParamNull"}
-#   
-# process {
-# 
-#    $isLiteral = $PsCmdlet.ParameterSetName -eq 'LiteralPath'
-#   
-#    Write-Warning "Literal Path ? $isLiteral"
-#    
-#    if ($isLiteral)
-#    { $ExecutionContext.InvokeProvider.Item.Exists(([Management.Automation.WildcardPattern]::Escape($LiteralPath)),$false,$false) } 
-#    else 
-#    { $ExecutionContext.InvokeProvider.Item.Exists($Path,$false,$false) }
-#   Write-Warning "`tProcess ParamNull=$ParamNull"
-#  }
-# }
-# new-item -ItemType directory -Path 'C:\Temp\Test[' -ea SilentlyContinue
-
 function Convert-Form {
 # .ExternalHelp ConvertForm-Help.xml           
-  [CmdletBinding()] 
-    [OutputType([System.String])] 
+  [CmdletBinding(DefaultParameterSetName="Path")] 
+  [OutputType([System.String])] 
  Param(
-      [ValidateNotNullOrEmpty()]
-      [Parameter(Position=0,Mandatory=$True,ValueFromPipeline=$True)]   
-      [Alias('PSPath')] 
-    [string] $Source, 
-
+      #On attend un nom de fichier
+     [ValidateNotNullOrEmpty()]
+     [Parameter(Position=0,Mandatory=$True,ValueFromPipeline=$True, ParameterSetName="Path")]
+   [string]$Path,
+   
+     [ValidateNotNullOrEmpty()]
+     [Parameter(Position=0,Mandatory=$True,ValueFromPipeline=$True, ParameterSetName="LiteralPath")]
+     [Alias('PSPath')]
+   [string]$LiteralPath,
+       
+       #On attend un nom de répertoire
       [parameter(position=1,ValueFromPipelineByPropertyName=$True)]
-    [PSObject] $Destination, #todo teste delayed SB
+    [PSObject] $Destination, #todo teste delayed SB    
+    
+      [parameter(position=1,ValueFromPipelineByPropertyName=$True)]
+    [PSObject] $DestinationLiteral, #todo teste delayed SB     
     
      [Parameter(Position=2,Mandatory=$false)]
      [ValidateSet("unknown", "string", "unicode", "bigendianunicode", "utf8", "utf7", "utf32", "ascii", "default", "oem")]
@@ -144,13 +112,27 @@ function Convert-Form {
 
  process {
   [boolean] $STA=$false
-  if ($Destination -ne $null) 
-  { $Destination=($Destination -as [String]).Trim() }
-  else 
-  { $Destination=[String]::Empty } 
- 
+  
+  $isLiteral=$PsCmdlet.ParameterSetName -eq "LiteralPath"
+  
+  $isDestination=$PSBoundParameters.ContainsKey('Destination')
+  $isDestinationLiteral=$PSBoundParameters.ContainsKey('DestinationLiteral')
+  if ($isDestination -and $isDestinationLiteral)
+  { Throw (New-Object System.ArgumentException($ConvertFormMsgs.ParameterIsExclusif)) }
+  
+  $isDestinationBounded=$isDestination -or $isDestinationLiteral
+  
+  if ($isDestinationLiteral) 
+  { $Destination=($DestinationLiteral -as [String]).Trim()}
+  else
+  { $Destination=($Destination -as [String]).Trim()}
+   
   #Valide les prérequis concernant les fichiers
-  $SourcePathInfo=New-PSPathInfo -Path ($Source.Trim())|Add-FileSystemValidationMember
+  if ($isLiteral)
+  { $SourcePathInfo=New-PSPathInfo -LiteralPath ($LiteralPath.Trim())|Add-FileSystemValidationMember }
+  else
+  { $SourcePathInfo=New-PSPathInfo -Path ($Path.Trim())|Add-FileSystemValidationMember }
+ 
   $FileName=$SourcePathInfo.GetFileName()
   
    #Le PSPath doit exister, ne pas être un répertoire, ne pas contenir de globbing et être sur le FileSystem
@@ -168,7 +150,7 @@ function Convert-Form {
     if (!$SourcePathInfo.isFileSystemProvider)
     {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.FileSystemPathRequired -F $FileName),'Source')) }
   
-    if ($SourcePathInfo.isWildcard)
+    if ($SourcePathInfo.isWildcard) 
     {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $FileName),'Source'))}
     else
     {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ItemNotFound -F $FileName),'Source')) } 
@@ -177,15 +159,19 @@ function Convert-Form {
   if ($SourceFI.Attributes -eq 'Directory')
   { Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ParameterMustBeAfile -F $FileName),'Source')) } 
   
+   #Le cast de Destination renvoit-il une chaîne ayant au moins un caractère différent d'espace ? 
   if ($Destination -ne [String]::Empty)
   {
-    #Le PSPath doit être valide, ne pas contenir de globbing et être sur le FileSystem
-    #Le PSPath peut ne pas exister mais son parent doit exister.
-    #On doit créer un fichier.
-    #On précise le raison de de l'erreur
-    $DestinationPathInfo=New-PSPathInfo -Path $Destination|Add-FileSystemValidationMember
-    $FileName=$DestinationPathInfo.GetFileName()
+    if ($isDestinationLiteral) 
+    { $DestinationPathInfo=New-PSPathInfo -LiteralPath $Destination|Add-FileSystemValidationMember }  
+    else
+    { $DestinationPathInfo=New-PSPathInfo -Path $Destination|Add-FileSystemValidationMember }
     
+    $FileName=$DestinationPathInfo.GetFileName()
+
+    #Le PSPath doit être valide, ne pas contenir de globbing ( sauf si literalPath) et être sur le FileSystem
+    #Le PSPath doit exister et pointer sur un répertoire :  { md C:\temp\test00 -Force}
+    #On précise la raison de l'erreur
     if (!$DestinationPathInfo.IsaValidNameForTheFileSystem()) 
     {
       if (!$DestinationPathInfo.isDriveExist) 
@@ -200,15 +186,18 @@ function Convert-Form {
       if ($DestinationPathInfo.isWildcard)
       {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.GlobbingUnsupported -F $FileName),'Destination')) }
     }
-    elseif (!$DestinationPathInfo.isParentItemExist)
+    elseif (!$DestinationPathInfo.isItemExist)
     {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.PathNotFound -F $FileName),'Destination')) }
-    elseif ($ExecutionContext.InvokeProvider.Item.IsContainer($Filename))
-    { Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ParameterMustBeAfile -F $FileName),'Destination')) } 
+    elseif (!$ExecutionContext.InvokeProvider.Item.IsContainer($Filename))
+    { Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ParameterMustBeAdirectory -F $FileName),'Destination')) } 
     
-    $ProjectPaths=New-FilesName $psScriptRoot $SourceFI  $DestinationPathInfo
+    $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $DestinationPathInfo
   }
   else 
-  { $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $Destination}
+  { 
+     #$Destination n'est pas utilisable ou n'a pas été précisé ( $null -> String.Empty) 
+    $ProjectPaths=New-FilesName $psScriptRoot $SourceFI
+  }
    
    #Teste s'il n'y a pas de conflit dans les switchs
    #Problème potentiel: la form principale masque la console, la fermeture de la seconde fenêtre réaffichera la console
@@ -231,8 +220,11 @@ function Convert-Form {
   
   Write-Verbose ($ConvertFormMsgs.BeginAnalyze -F $ProjectPaths.Source)
 
-  #Tout ou partie du fichier peut être verrouillé
-  foreach ($Ligne in Get-Content $ProjectPaths.Source -ErrorAction Stop)
+  if ($isLiteral)
+  { $Lignes= Get-Content -Literalpath $ProjectPaths.Source -ErrorAction Stop }
+  else
+  { $Lignes= Get-Content -Path $ProjectPaths.Source -ErrorAction Stop }
+  foreach ($Ligne in $Lignes)
   {
     if (! $isDebutCodeInit)
     {  # On démarre l'insertion à partir de cette ligne
@@ -374,7 +366,7 @@ function Convert-Form {
        if ($crMgr.success)
        {
          $IsUsedResources = $True
-         $Components[$i]=Add-ManageRessources  $ProjectPaths.Sourcename
+         $Components[$i]=Add-ManageRessources $ProjectPaths.Sourcename
          Write-Debug "IsUsedResources : $IsUsedResources"
          continue
        }
@@ -437,7 +429,7 @@ function Convert-Form {
   #----------------------------------------------------------------------------- 
   
   if ($IsUsedResources -eq $true)
-  { New-RessourcesFile $ProjectPaths }
+  { New-RessourcesFile $ProjectPaths -isLiteral $isLiteral }
   
   If(!$noLoadAssemblies)
   {
@@ -731,13 +723,18 @@ function Convert-Form {
    }
    If (!$noShowDialog -and $HideConsole )
    {
-      Write-Debug "[Ajout Code] Show-Window"
+      Write-Debug "[Ajout de code] Show-Window"
       [void]$LinesNewScript.Add('Show-Window')
    }
   
      # Ecriture du fichier de sortie
    try {
-      if ((!$Force) -and (Test-Path $ProjectPaths.Destination))
+     if ((!$isDestinationBounded -and $isLiteral) -or $isDestinationLiteral)
+     { $DestinationExist=Test-Path -LiteralPath $ProjectPaths.Destination }
+     else
+     { $DestinationExist=Test-Path -Path $ProjectPaths.Destination }
+	 
+      if (!$Force -and $DestinationExist)
       {  
         $Choice=Read-Choice ($ConvertFormMsgs.ReadChoiceCaption -F $ProjectPaths.Destination) $ConvertFormMsgs.ReadChoiceMessage
         if ($Choice -eq $ChoiceNO)
@@ -745,7 +742,10 @@ function Convert-Form {
       }
   
       Write-Verbose ($ConvertFormMsgs.GenerateScript -F $ProjectPaths.Destination)
-      Out-File -InputObject $LinesNewScript -FilePath $ProjectPaths.Destination -Encoding $Encoding -Width 999
+      if ((!$isDestinationBounded -and $isLiteral) -or $isDestinationLiteral)
+      { Out-File -InputObject $LinesNewScript -LiteralPath $ProjectPaths.Destination -Encoding $Encoding -Width 999 }
+      else
+      { Out-File -InputObject $LinesNewScript -FilePath $ProjectPaths.Destination -Encoding $Encoding -Width 999 }
    } catch {
        #[System.UnauthorizedAccessException] #fichier protégé en écriture
        #[System.IO.IOException] #Espace insuffisant sur le disque.
@@ -754,7 +754,7 @@ function Convert-Form {
            $_.Exception,                         
            "CreateScriptError", 
            "WriteError",
-           ("[{0}]" -f $Source)
+           ("[{0}]" -f $ProjectPaths.Destination)
            )  
         )
       )  
@@ -779,13 +779,15 @@ function Convert-Form {
   }#process
 } #Convert-Form
 
-function Test-PSScript { 
+
+function Test-PSScript {  
 # .ExternalHelp ConvertForm-Help.xml           
   [CmdletBinding()] 
     [OutputType([System.String])] 
  #Valide la syntaxe d'un fichier powershell (ps1,psm1,psd1)
  #From http://blogs.microsoft.co.il/blogs/scriptfanatic/archive/2009/09/07/parsing-powershell-scripts.aspx 
-   param( 
+ #$FilePath contient des noms de fichier littéraux
+   param(                                
       [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]  
       [ValidateNotNullOrEmpty()]  
       [Alias('PSPath','FullName')]  
@@ -801,12 +803,12 @@ function Test-PSScript {
    { 
        $FilePath | 
         Foreach-Object { 
-           if(Test-Path -Path $_ -PathType Leaf) 
+           if(Test-Path -LiteralPath $_ -PathType Leaf) 
            { 
-              $Path = Convert-Path -Path $_  
+              $Path = Convert-Path -LiteralPath $_  
   
               $Errors = $null 
-              $Content = Get-Content -Path $path  
+              $Content = Get-Content -LiteralPath $Path  
               $Tokens = [System.Management.Automation.PsParser]::Tokenize($Content,[ref]$Errors) 
               if($Errors -ne $null) 
               { 
@@ -835,4 +837,9 @@ function Test-PSScript {
    } 
 }#Test-PSScript
 
+Function OnRemoveConvertForm {
+ Remove-Module Transform
+}#OnRemovePsIonicZip
+ 
+$MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = { OnRemoveConvertForm }
 Export-ModuleMember -Function Convert-Form,Test-PSScript 

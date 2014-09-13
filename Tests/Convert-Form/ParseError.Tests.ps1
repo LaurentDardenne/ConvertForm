@@ -1,9 +1,17 @@
-﻿$here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path).Replace(".Tests.", ".")
-. "$here\$sut"
+﻿$DesignerNoInitializeComponentMethod ="$($ConvertForm.RepositoryLocation)\TestsWinform\TestNotWinFormFile\Error.aspx.designer.cs"
+$DesignerNoFormName="$($ConvertForm.RepositoryLocation)\TestsWinform\TestNotWinFormFile\NoFormName.Designer.cs"
 
 Describe "ParseError" {
-    It "does something useful" {
-        $true | Should Be $false
+   Context "La méthode InitializeComponent() est introuvable" { 
+    It "fails" {
+      { Convert-Form -Path $DesignerPanelBadAnalyze -Destination "$TestDirectory"} | Should Throw
     }
+   }
+   
+   Context "Le nom de la Form est introuvable dans la méthode InitializeComponent()" { 
+    It "fails" {
+      { Convert-Form -Path $DesignerNoFormName -Destination "$TestDirectory"} | Should Throw
+    }
+   }
+
 }

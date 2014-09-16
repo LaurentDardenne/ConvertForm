@@ -412,7 +412,7 @@ Function New-PSPathInfo{
         }  
 
       $Infos| 
-        Add-Member -Membertype Scriptmethod -Name GetFileName {
+        Add-Member -Membertype Scriptmethod -Name GetFileName { #todo rename GetPathName peut être une répertoire ou un fichier
           If ($this.Win32PathName -ne $null) 
           {$this.Win32PathName } 
           elseIf ($this.ResolvedPSPath -ne $null) 

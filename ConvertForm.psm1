@@ -111,6 +111,21 @@ function Convert-Form {
  )
 
  process {
+  
+  $_EA= $null
+  [void]$PSBoundParameters.TryGetValue('ErrorAction',[REF]$_EA)
+  
+  if ($_EA -eq $null)
+  {
+     #Récupère la valeur du contexte de l'appelant
+    $ErrorActionPreference=$PSCmdlet.SessionState.PSVariable.Get('ErrorActionPreference').Value
+  }
+  else 
+  { 
+     #Priorité: On remplace sa valeur
+    $ErrorActionPreference=$_EA
+  }
+   
   [boolean] $STA=$false
   
   $isLiteral=$PsCmdlet.ParameterSetName -eq "LiteralPath"
@@ -188,7 +203,7 @@ function Convert-Form {
     }
     elseif (!$DestinationPathInfo.isItemExist)
     {Throw (New-Object System.ArgumentException(($ConvertFormMsgs.PathNotFound -F $FileName),'Destination')) }
-    elseif (!$ExecutionContext.InvokeProvider.Item.IsContainer($Filename))
+    elseif (!$DestinationPathInfo.IsDirectoryExist($Filename))
     { Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ParameterMustBeAdirectory -F $FileName),'Destination')) } 
     
     $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $DestinationPathInfo
@@ -429,7 +444,7 @@ function Convert-Form {
   #----------------------------------------------------------------------------- 
   
   if ($IsUsedResources -eq $true)
-  { New-RessourcesFile $ProjectPaths -isLiteral $isLiteral }
+  { New-RessourcesFile $ProjectPaths -isLiteral:$isLiteral -EA $ErrorActionPreference }
   
   If(!$noLoadAssemblies)
   {
@@ -728,7 +743,7 @@ function Convert-Form {
    }
   
      # Ecriture du fichier de sortie
-   try {
+  try {
      if ((!$isDestinationBounded -and $isLiteral) -or $isDestinationLiteral)
      { $DestinationExist=Test-Path -LiteralPath $ProjectPaths.Destination }
      else
@@ -787,6 +802,7 @@ function Test-PSScript {
  #Valide la syntaxe d'un fichier powershell (ps1,psm1,psd1)
  #From http://blogs.microsoft.co.il/blogs/scriptfanatic/archive/2009/09/07/parsing-powershell-scripts.aspx 
  #$FilePath contient des noms de fichier littéraux
+ #todo exception sur les IO.0 Exemple verrou sur le ps1 généré
    param(                                
       [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]  
       [ValidateNotNullOrEmpty()]  

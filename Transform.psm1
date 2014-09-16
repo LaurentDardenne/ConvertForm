@@ -334,6 +334,7 @@ function New-FilesName{
 
 function New-RessourcesFile{
 #Compile le fichier contenant les ressources d'un formulaire, ex : Form1.resx
+  [CmdletBinding()] 
  param (
   $ProjectPaths,
   [switch] $isLiteral
@@ -365,15 +366,6 @@ function New-RessourcesFile{
 	 
      if ($FileResourceExist)
 	 {
-	   if ((Test-Path $Log))
-	   { 
-	     try{
-	        Remove-Item $Log -EA stop
-         }catch {
-            Write-Warning ($TransformMsgs.FileCannotBeRemoved -F $Log)
-         } 
-	   }
-
 	    #Redirige le handle d'erreur vers le handle standard de sortie
 	   $ResultExec=.$Resgen $SrcResx $DestResx 2>&1
 	   if ($LastExitCode -ne 0)
@@ -385,7 +377,7 @@ function New-RessourcesFile{
          if ($isLiteral)
          { $ResultExec|Out-File -Literal $Log -Width 999 }
          else
-         { $ResultExec|Out-File -Path $Log -Width 999 }
+         { $ResultExec|Out-File -FilePath $Log -Width 999 }
        }catch {
           Write-Warning ($TransformMsgs.CreateLogFileError -F $Log)
        } 

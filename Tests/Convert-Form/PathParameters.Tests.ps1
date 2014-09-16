@@ -1,7 +1,16 @@
 ﻿$DesignerFileExisting ="$($ConvertForm.RepositoryLocation)\TestsWinform\Base\Form1.Designer.cs"
 $DesignerFileExistingLiteralpath ="$($ConvertForm.RepositoryLocation)\TestsWinform\Test21LiteralPath[AG]Naming\Frm[AG].Designer.cs"
 
-Describe "PathParameters" {
+Describe "Valid path parameters" {
+   Context "-Path (..) : Le chemin doit pointer sur le FileSystem" {
+     It "fails" {
+       { 
+          Push-Location hklm:\
+           Convert-Form -Path .. -Destination .. }| Should Throw
+          Pop-Location 
+     }
+   }
+   
    Context "Le paramètre Path (..) doit être un nom de fichier" {
      It "fails" {
        { Convert-Form -Path .. -Destination .. }| Should Throw
@@ -14,15 +23,12 @@ Describe "PathParameters" {
      }
    }
 
-   Context "Le paramètre Destination (.) doit être un nom de fichier" {
+   Context "Le paramètre Destination (..) doit être un nom de répertoire" {
      It "fails" {
-       { Convert-Form -Path $DesignerFileExisting -Destination .} | Should Throw
-     }
-   }
-
-   Context "Le paramètre Destination (..) doit être un nom de fichier" {
-     It "fails" {
-       { Convert-Form -Path $DesignerFileExisting -Destination ..} | Should Throw
+       { 
+         Push-Location $TestDirectory 
+          Convert-Form -Path $DesignerFileExisting -Destination $TestNomDeFichier} | Should Throw
+         Pop-Location 
      }
    }
    
@@ -54,25 +60,25 @@ Describe "PathParameters" {
 
    Context "-Path : Le fichier n'existe pas" {
      It "fails" {
-       { Convert-Form -Path 'c:\temp\NotExist.Designer.cs' -Destination .} | Should Throw
+       { Convert-Form -Path "$TestDirectory\NotExist.Designer.cs" -Destination .} | Should Throw
      }
    }
 
    Context "-LiteralPath : Le fichier n'existe pas" {
      It "fails" {
-       { Convert-Form -LiteralPath 'c:\temp\NotExist.Designer.cs' -Destination .} | Should Throw
+       { Convert-Form -LiteralPath "$TestDirectory\NotExist.Designer.cs" -Destination .} | Should Throw
      }
    }
 
    Context "-Path: Le chemin du fichier n'existe pas" {
      It "fails" {
-       { Convert-Form -Path 'C:\NotExist\MainForm.Designer.cs' -Destination .} | Should Throw
+       { Convert-Form -Path "$TestDirectory\MainForm.Designer.cs" -Destination .} | Should Throw
      }
    }
 
     Context "-LiteralPath: Le chemin du fichier n'existe pas" {
      It "fails" {
-       { Convert-Form -LiteralPath 'C:\NotExist\MainForm.Designer.cs' -Destination .} | Should Throw
+       { Convert-Form -LiteralPath "$TestDirectory\NotExist\MainForm.Designer.cs" -Destination .} | Should Throw
      }
    }
 
@@ -120,7 +126,7 @@ Describe "PathParameters" {
 
    Context "-Path OK -DestinationLiteral OK: Le globbing est supporté" { 
     It "Works" {
-      { Convert-Form -Path $DesignerFileExisting -DestinationLiteral ($TestDirectory+'\Frm[AZ]') -force} | Should not Throw
+      { Convert-Form -Path $DesignerFileExisting -DestinationLiteral "$TestDirectory\Frm[AZ]" -force} | Should not Throw
     }
    }
       

@@ -15,5 +15,8 @@ Write-host "Test in $TestDirectory"
 rm $TestDirectory -rec -force -ea SilentlyContinue >$null
 md $TestDirectory -ea SilentlyContinue >$null
 
+$TestNomDeFichier="$TestDirectory\Test.txt"
+"Test Fichier" > $TestNomDeFichier
+
 cd $ConvertForm.Tests
-Invoke-Pester 
+Write-host "Invoke-Pester" 

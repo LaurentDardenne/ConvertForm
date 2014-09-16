@@ -4,13 +4,17 @@ $DesignerNoFormName="$($ConvertForm.RepositoryLocation)\TestsWinform\TestNotWinF
 Describe "ParseError" {
    Context "La méthode InitializeComponent() est introuvable" { 
     It "fails" {
-      { Convert-Form -Path $DesignerPanelBadAnalyze -Destination "$TestDirectory"} | Should Throw
+      { Convert-Form -Path $DesignerPanelBadAnalyze -Destination "$TestDirectory" } | Should Throw
     }
    }
    
    Context "Le nom de la Form est introuvable dans la méthode InitializeComponent()" { 
     It "fails" {
-      { Convert-Form -Path $DesignerNoFormName -Destination "$TestDirectory"} | Should Throw
+      { 
+        $ErrorActionPreference='Stop'
+         Convert-Form -Path $DesignerNoFormName -Destination "$TestDirectory"
+        $ErrorActionPreference='Continue'
+      } | Should Throw
     }
    }
 

@@ -3,6 +3,8 @@
 # Objet   : Regroupe des fonctions de transformation de 
 #           code CS en code PowerShell.
 
+#todo traduire commentaire Fr dans le code généré
+
 Import-LocalizedData -BindingVariable TransformMsgs -Filename TransformLocalizedData.psd1 -EA Stop
 
  #Création du header
@@ -95,17 +97,8 @@ $Shown
 "@
 }
 
-function Add-ManageRessources{
- #Ajoute le code gérant un fichier de ressources et ce à l'aide d'une "here-string"
-  # 1 fonction
-  # 2 test d'existence du fichier
-  # 3 récupération dans une hastable des ressources de la Winform
-
-# Here-string   
- param (
-  [string] $SourceName
- )
- 
+function Add-GetScriptDirectory{
+Write-Debug "Add-GetScriptDirectory" 
 @"
 
 function Get-ScriptDirectory
@@ -115,20 +108,65 @@ function Get-ScriptDirectory
 }
 
 `$ScriptPath = Get-ScriptDirectory
-`$RessourcesPath= Join-Path `$ScriptPath "$SourceName.resources"
-if ( !(Test-Path `$RessourcesPath))
+"@         
+}#Add-GetScriptDirectory
+
+function Add-ManageResources{
+ #Ajoute le code gérant un fichier de ressources et ce à l'aide d'une "here-string"
+  # 1 fonction
+  # 2 test d'existence du fichier
+  # 3 récupération dans une hastable des ressources de la Winform
+
+ param (
+  [string] $SourceName
+ )
+Write-Debug "Add-ManageResources $SourceName.resources" 
+
+@"
+
+function Get-ScriptDirectory
+{ #Return the directory name of this script
+  `$Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path `$Invocation.MyCommand.Path
+}
+
+`$ScriptPath = Get-ScriptDirectory
+`$ResourcesPath= Join-Path `$ScriptPath "$SourceName.resources"
+if ( !(Test-Path `$ResourcesPath))
 {
   Write-Error `"$($TransformMsgs.ManageResourcesError)`"
   break; 
 }
   #Gestion du fichier des ressources
-`$Reader = new-Object System.Resources.ResourceReader(`$RessourcesPath)
-`$Ressources=@{}
-`$Reader.GetEnumerator()|% {`$Ressources.(`$_.Name)=`$_.value}
+`$Reader = new-Object System.Resources.ResourceReader(`$ResourcesPath)
+`$Resources=@{}
+`$Reader.GetEnumerator()|% {`$Resources.(`$_.Name)=`$_.value}
  
  # Création des composants
 "@         
-}#Add-ManageRessources
+}#Add-ManageResources
+
+function Add-ManagePropertiesResources {
+ param (
+  [string] $SourceName
+ )
+Write-Debug "Add-ManagePropertiesResources $SourceName.resources"
+ 
+@"
+
+`$ResourcesPath= Join-Path `$ScriptPath "$SourceName.resources"
+if ( !(Test-Path `$ResourcesPath))
+{
+  Write-Error `"$($TransformMsgs.ManageResourcesError)`"
+  break; 
+}
+  #Gestion du fichier des ressources des propiétés du projet
+`$PropertiesReader = new-Object System.Resources.ResourceReader(`$ResourcesPath)
+`$PropertiesResources=@{}
+`$PropertiesReader.GetEnumerator()|% {`$PropertiesResources.(`$_.Name)=`$_.value}
+
+"@                  
+}#Add-ManagePropertiesResources
 
 function Convert-Enum([String] $Enumeration)
 { #Converti une valeur d'énumération
@@ -297,8 +335,8 @@ function New-FilesName{
    # fichier ressource associé : C:\VS\Projet\PS\Form1.resx   
    #
    # fichier script généré     : C:\Temp\Form1.ps1     
-   # fichier de log généré     : C:\Temp\Form1.ressources.Log
-   # fichier ressource généré  : C:\Temp\Form1.ressources
+   # fichier de log généré     : C:\Temp\Form1.resources.Log
+   # fichier ressource généré  : C:\Temp\Form1.resources
       
   $ProjectPaths=@{
      Source=$SourceFI.FullName
@@ -332,7 +370,7 @@ function New-FilesName{
   $ProjectPaths 
 } #New-FilesName
 
-function New-RessourcesFile{
+function New-ResourcesFile{
 #Compile le fichier contenant les ressources d'un formulaire, ex : Form1.resx
   [CmdletBinding()] 
  param (
@@ -385,7 +423,7 @@ function New-RessourcesFile{
      else
      { Write-Error ($TransformMsgs.ResourceFileNotFound -F $SrcResx) }
   } 
-} #New-RessourcesFile
+} #New-ResourcesFile
 
 function Add-ErrorProvider([String] $ComponentName, [String] $FormName)
 { #Ajoute le texte suivant après la ligne de création de la form,
@@ -432,6 +470,26 @@ function Read-Choice{
   $Choices = [System.Management.Automation.Host.ChoiceDescription[]]($Yes,$No)
   $Host.UI.PromptForChoice($Caption,$Message,$Choices,([byte]($DefaultChoice -eq 'No')))
 }
+
+# todo function Read-Resources {
+# #todo http://msdn.microsoft.com/fr-fr/library/t69a74ty%28v=vs.90%29.aspx
+# # Lit le fichier resx du répertoire properties du projet : TestFrm.Properties.Resources         
+#     if ( !(Test-Path $ResourcesPath))
+#   {
+#     Write-Error "Le fichier de ressources n'existe pas : $ResourcesPath"
+#     break; 
+#   }
+# 
+#   resgen G:\PS\ConvertForm\TestsWinform\Base\Properties\Resources.resx $env:temp
+# 
+#   $ResourcesPath= Join-Path $ScriptPath "$env:temp($Name).resources"
+#     #Gestion du fichier des ressources
+#   $Reader = new-Object System.Resources.ResourceReader($ResourcesPath)
+#   $Resources=@{}
+#   $Reader.GetEnumerator()|% {$Resources.($_.Name)=$_.value}
+#   if ($Resources.Count -ne 0)
+#   {return $Resources}          
+#}
 
 #Functions Windows
 function Add-Win32FunctionsType {

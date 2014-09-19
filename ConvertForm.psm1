@@ -1,5 +1,7 @@
 #PowerShell Form Converter
 
+#todo create ISE Add-On template :http://pshcreator.codeplex.com/SourceControl/latest#WMIAutoCode/WMIAutoCode_AddOn.ps1
+
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
  
  #On charge les méthodes de construction et d'analyse du fichier C#
@@ -232,6 +234,7 @@ function Convert-Form {
   $ErrorProviders =New-Object System.Collections.ArrayList(5)
   [boolean] $isDebutCodeInit = $false
   [string] $FormName=[string]::Empty
+  [boolean] $IsUsedPropertiesResources= $false  # On utilise le fichier de ressources des propriétés du projet
   
   Write-Verbose ($ConvertFormMsgs.BeginAnalyze -F $ProjectPaths.Source)
 
@@ -239,6 +242,8 @@ function Convert-Form {
   { $Lignes= Get-Content -Literalpath $ProjectPaths.Source -ErrorAction Stop }
   else
   { $Lignes= Get-Content -Path $ProjectPaths.Source -ErrorAction Stop }
+  
+  Write-Debug "Début de la première analyse"
   foreach ($Ligne in $Lignes)
   {
     if (! $isDebutCodeInit)
@@ -281,6 +286,13 @@ function Convert-Form {
           Write-Warning ($ConvertFormMsgs.AddSTARequirement -F $STAReason)
         }                  
       }
+     
+     #La form nécessite-t-elle l'usage du fichier resx du projet ?
+     if ( ($IsUsedPropertiesResources -eq $false) -and ($Ligne -Match '^(.*)= global::(.*?\.Properties.Resources\.)') )
+     { 
+       $IsUsedPropertiesResources=$true
+       Write-debug "Nécessite le fichier resx du propriétés du projet"
+     }
     }#else
   } #foreach
 
@@ -329,7 +341,7 @@ function Convert-Form {
   #
   # ----------------------------------------
   $LinesNewScript = New-Object System.Collections.ArrayList(600)
-  [void]$LinesNewScript.Add( (Add-Header $ProjectPaths.Destination $($MyInvocation.Line) ))
+  [void]$LinesNewScript.Add( (Add-Header $ProjectPaths.Destination $($MyInvocation.Line) $ProjectPaths.Source ))
   
   if ($STA)
   { 
@@ -381,12 +393,10 @@ function Convert-Form {
        if ($crMgr.success)
        {
          $IsUsedResources = $True
-         $Components[$i]=Add-ManageRessources $ProjectPaths.Sourcename
          Write-Debug "IsUsedResources : $IsUsedResources"
          continue
        }
      }
-     
       # Recherche les noms des possibles ErrorProvider 
       #Ligne :  this.errorProvider2 = new System.Windows.Forms.ErrorProvider(this.components);
       #Write-Debug "Test ErrorProviders: $($Components[$i])"
@@ -443,9 +453,6 @@ function Convert-Form {
   #  Fin de traitements des propriétés "multi-lignes"
   #----------------------------------------------------------------------------- 
   
-  if ($IsUsedResources -eq $true)
-  { New-RessourcesFile $ProjectPaths -isLiteral:$isLiteral -EA $ErrorActionPreference }
-  
   If(!$noLoadAssemblies)
   {
      Write-Debug "[Ajout Code] chargement des assemblies"
@@ -454,15 +461,40 @@ function Convert-Form {
      [void]$LinesNewScript.Add($ConvertFormMsgs.LoadingAssemblies)
      Add-LoadAssembly $LinesNewScript $Assemblies
   }
+
+  [void]$LinesNewScript.Add( (Add-GetScriptDirectory) )
+
+  if ($IsUsedPropertiesResources)
+  { 
+    [void]$LinesNewScript.Add( (Add-ManagePropertiesResources "$($ProjectPaths.Sourcename)Properties"))
+    New-ResourcesFile $ProjectPaths -isLiteral:$isLiteral -EA $ErrorActionPreference  
+  }
+
+  if ($IsUsedResources)
+  { 
+    [void]$LinesNewScript.Add( (Add-ManageResources $ProjectPaths.Sourcename)) 
+    # todo New-PropertiesResourcesFile $ProjectPaths -isLiteral:$isLiteral -EA $ErrorActionPreference 
+  }
+
   #On ajoute la création de la form avant tout autre composant
   #Le code de chaque composant référençant cet objet est assuré de son existence
   [void]$LinesNewScript.Add("`$$FormName = New-Object System.Windows.Forms.Form`r`n")
   
   Write-Debug "Début de la troisième analyse"
   $progress=0
+  $setBrkPnt=$true
+  $BPLigneRead,$BPLigneWrite=$null
+  
    #Lance la modification du texte d'origine
   foreach ($Ligne in $Components)
   {
+      Write-debug "---------Traite la ligne : $Ligne"
+     if ($setBrkPnt -and ($DebugPreference -ne "SilentlyContinue"))
+     {
+       $BPLigneRead=Set-PSBreakpoint -Variable Ligne -Mode Read -Action { Write-Debug "[R]$Ligne"}
+       $BPLigneWrite=Set-PSBreakpoint -Variable Ligne -Mode Write -Action { Write-Debug "[W]$Ligne"}
+       $setBrkPnt=$false
+     }
      $progress++                     
      Write-Progress -id 1 -activity ($ConvertFormMsgs.TransformationProgress -F $Components.Count) -status $ConvertFormMsgs.TransformationProgressStatus -percentComplete (($progress/$Components.count)*100)
        #On supprime les espaces en début et en fin de chaînes
@@ -506,13 +538,13 @@ function Convert-Form {
   
        # On ne modifie pas les lignes du type :
        #       this.bindingNavigator1.AddNewItem = this.bindingNavigatorAddNewItem;
-     $MatchTmp =[Regex]::Match($Ligne,"^.*= this.*")   
+     $MatchTmp =[Regex]::Match($Ligne,"^(.*?) = (this|global::|\(\().*")   
      if ($MatchTmp.Success -eq $false)
      {$Ligne = $Ligne -replace "^(.*)= (.*)\.(\w+);$", '$1=[$2]::$3'}
   
       # Suppression du token C# de fin de ligne 
-     $Ligne = $Ligne -replace ";$",''
-  
+     $Ligne = $Ligne -replace '\s*;\s*$',''
+     
       # Suppression du token d'appel de méthode. ATTENTION. Utile uniquement pour les constructeurs !
      $Ligne = $Ligne -replace "\(\)$",''
   
@@ -531,15 +563,14 @@ function Convert-Form {
       $Ligne = $Ligne -replace ' = this$'," = `$$FormName"
   
       # Remplacement du format de typage des données
-      #PB A quoi cela correspond-il ? si on remplace ici pb par la suite sur certaine ligne
-      # A prioris le traitement n'est pas complet et fausse les analyses suivantes.
+      #PB A quoi cela correspond-il ? si on remplace ici pb par la suite sur certaines lignes
+      # A priori le traitement n'est pas complet et fausse les analyses suivantes.
       #$Ligne = $Ligne -replace "\((\w+\.\w+\.\w+\.\w+)\)", '[$1]' 
        
        # Remplacement, dans le cadre du remplissage d'objets avec des valeurs, de 
        # la chaîne "new XXXXXX[] {" 
      $Ligne = $Ligne -replace "new [A-Za-z0-9_\.]+\[\] \{",'@('
       # Tjs dans le cadre du remplissage de listbox, remplacement de "})" par "))"
-      #if ($Ligne.EndsWith("})")) {$Ligne = $Ligne.replace("})", '))')}
      $Ligne = $Ligne -replace "}\)$",'))'
   
   #TODO : BUG dans la reconnaissance du pattern. Décomposer la ligne qui peut être complexe
@@ -607,7 +638,28 @@ function Convert-Form {
        #Traite les ressources 
       If ($IsUsedResources)
       {   
-         $Ligne = $Ligne -replace "^(.*)= \(\((.*)\)\(resources.GetObject\(`"(.*)`"\)\)\)$", '$1= [$2] $Ressources["$3"]'
+         $Ligne = $Ligne -replace '^(.*?) = \(\((.*)\)\(resources.GetObject\("(.*)"\)\)\)$', '$1= [$2] $Resources["$3"]'
+      }
+
+#       Write-debug "IsUsedPropertiesResources=$IsUsedPropertiesResources"
+#       Write-debug "`t $Ligne"
+#       write-debug "matches $($Ligne -match '^(?<Object>.*) = global::(.*?\.Properties.Resources\.)(?<Key>.*);$')"
+      write-debug '----'
+      if ($IsUsedPropertiesResources -and ($Ligne -match '^(?<Object>.*) = global::(.*?\.Properties.Resources\.)(?<Key>.*)$'))
+      { 
+        #todo culture ResourceManager.GetObject("Go", resourceCulture);
+        # transforme : this.pictureBox1.Image = global::TestFrm.Properties.Resources.Koala;
+        #  en        : pictureBox1.Image = $PropertiesResources["Koala"]
+        #
+        # Koala est le nom d'une clé du fichier resx du projet : 
+        # TestFrm.Properties est un espace de nom,  .Resources est une classe et Koala une propriété statique
+        # les fichiers associée:
+        #  Projet\Frm\Properties\Resources.Designer.cs
+        #  Projet\Frm\Properties\Resources.resx
+       $nl='{0}= $PropertiesResources["{1}"]' -F $Matches.Object,$Matches.Key
+       [void]$LinesNewScript.Add($nl)
+       continue
+      }
   # Todo BUG
 # ConvertForm\TestsWinform\Test14BoitesDeDialogue\FrmTest14BoitesDeDialogue.Designer.cs
 #       #
@@ -636,20 +688,12 @@ function Convert-Form {
   #
   # révision de la gestion des ressources
   #       Write-host $ligne
-  #        $Ligne = $Ligne -replace "^(.*)= \(\((.*)\)\(resources.GetObject\((.*)\)\)\)$", '$1= [$2] $Ressources[$3]'
+  #        $Ligne = $Ligne -replace "^(.*)= \(\((.*)\)\(resources.GetObject\((.*)\)\)\)$", '$1= [$2] $Resources[$3]'
   #        Write-host $ligne
   #          #$$$2 échappe le caractère dollar dans une regex
-  #        $Ligne = $Ligne -replace "^(.*)\(this.(.*), resources.GetString\((.*)\)\)$", '$1($$$2, $Ressources[$3])'
+  #        $Ligne = $Ligne -replace "^(.*)\(this.(.*), resources.GetString\((.*)\)\)$", '$1($$$2, $Resources[$3])'
   #        Write-host $ligne
           
-      }
-
-# BUG
-#  FrmTest6Composants.ps1   
-#    this.directorySearcher1.ClientTimeout = System.TimeSpan.Parse("-00:00:01");
-#    $directorySearcher1.ClientTimeout = System.TimeSpan.Parse("-00:00:01")
-# 
-#    this.process1.StartInfo.Password = null;
   
   # -------  Traite les propriétés .Font
       $MatchTmp =[Regex]::Match($Ligne,'^(.*)(\.Font =.*System.Drawing.Font\()(.*)\)$')   
@@ -709,15 +753,19 @@ function Convert-Form {
      #System.Parse("-00:00:01");
      #System.TimeSpan.Parse("-00:00:01");
      #System.T1.T2.T3.Parse("-00:00:01");
-     # OK pour        this.directorySearcher1.ClientTimeout = System.TimeSpan.Parse("-00:00:01");
-     # MAIS PAS pour  this.directorySearcher1.ClientTimeout = $System.TimeSpan.Parse("-00:00:01");
-     #   un espace qui n'est pas suivi d'un signe dollar 
-     #todo regex incorrecte si + espaces :   ClientTimeout =    $System.TimeSpan.
-     $Ligne = $Ligne -replace '^(.*) =\s(?!\$)(.[^\s]*)\.(.[^\.\s]*?)\(','$1 = [$2]::$3(' 
+     #todo : regex en une passe 
+     if ($Ligne -notmatch '^(.*) =\s*(\$|\()')
+     { 
+      # Write-Debug "Change méthode statique : $Ligne"
+       $Ligne = $Ligne -replace '^(.*) =\s*(.[^\s]*)\.(.[^\.\s]*?)\(','$1 = [$2]::$3(' 
+     } 
      
-  # ------- Fertig !     
+     Write-debug '---------------------'      
       [void]$LinesNewScript.Add($Ligne)
    } #foreach
+
+  if ($DebugPreference -ne "SilentlyContinue")
+  { $BPLigneRead,$BPLigneWrite | Remove-PSBreakpoint }
   Write-Debug "Conversion du code CSharp effectuée."
   
    [void]$LinesNewScript.Add( (Add-SpecialEventForm $FormName -HideConsole:$HideConsole))
@@ -726,6 +774,12 @@ function Convert-Form {
       Write-Debug "[Ajout Code]Libération des ressources"
       [void]$LinesNewScript.Add($ConvertFormMsgs.DisposeResources)
       [void]$LinesNewScript.Add('$Reader.Close()') 
+   }
+
+   If ($IsUsedPropertiesResources)
+   {  
+      Write-Debug "[Ajout Code]Libération des ressources des propriétés du projet"
+      [void]$LinesNewScript.Add('$PropertiesReader.Close()') 
    }
    
    If (!$noShowDialog)
@@ -789,7 +843,7 @@ function Convert-Form {
      Write-Debug "Emission de l'objet fichier : $($ProjectPaths.Destination)"
      gci $ProjectPaths.Destination
    } 
-   Write-Debug ('[{0}] Fin du script atteinte.' -F $MyInvocation.MyCommand)
+   Write-Debug ("[{0}] Fin d'analyse du script." -F $MyInvocation.MyCommand)
    Write-Verbose ($ConvertFormMsgs.ConversionComplete-F $ProjectPaths.Source)
   }#process
 } #Convert-Form
@@ -802,7 +856,6 @@ function Test-PSScript {
  #Valide la syntaxe d'un fichier powershell (ps1,psm1,psd1)
  #From http://blogs.microsoft.co.il/blogs/scriptfanatic/archive/2009/09/07/parsing-powershell-scripts.aspx 
  #$FilePath contient des noms de fichier littéraux
- #todo exception sur les IO.0 Exemple verrou sur le ps1 généré
    param(                                
       [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]  
       [ValidateNotNullOrEmpty()]  

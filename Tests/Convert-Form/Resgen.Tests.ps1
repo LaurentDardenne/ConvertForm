@@ -1,9 +1,4 @@
-﻿# Transform.psm1
-# 351: { Write-Error ($TransformMsgs.ResgenNotFound -F $Resgen) }
-# 380: { Write-Error ($TransformMsgs.CreateResourceFileError -F $LastExitCode,$log) }
-# 394: { Write-Error ($TransformMsgs.ResourceFileNotFound -F $SrcResx) }
-
-$ProjectDirectory ="$($ConvertForm.RepositoryLocation)\TestsWinform\Test3Menus"
+﻿$ProjectDirectory ="$($ConvertForm.RepositoryLocation)\TestsWinform\Test3Menus"
 $Designer="$ProjectDirectory\FrmTest3Menus.Designer.cs"
 $DestinationDirectory= "$TestDirectory\Test3Menus"
 

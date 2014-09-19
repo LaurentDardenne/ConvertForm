@@ -1,7 +1,5 @@
 #PowerShell Form Converter
 
-#todo create ISE Add-On template :http://pshcreator.codeplex.com/SourceControl/latest#WMIAutoCode/WMIAutoCode_AddOn.ps1
-
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
  
  #On charge les méthodes de construction et d'analyse du fichier C#
@@ -109,6 +107,19 @@ function Convert-Form {
      
     [switch] $HideConsole,
     
+    [switch] $asIseAddon, 
+    #http://pshcreator.codeplex.com
+    #Créer une fonction Launcher
+    #ajouter la ligne d'appel :
+    # $psISE.CurrentPowerShellTab.AddOnsMenu.Submenus.Add("WMI AutoScript", {LaunchMain},"ALT+F5") | out-Null
+    #Exemple : "G:\PS\ConvertForm\Tests\WMI Explorer.png"
+    #
+    # OverloadDefinitions                                                                                                 
+    # -------------------                                                                                                 
+    # Microsoft.PowerShell.Host.ISE.ISEMenuItem Add(string displayName, scriptblock action, System.Windows.Input.KeyGesture shortcut)                                                                           
+    # void Add(Microsoft.PowerShell.Host.ISE.ISEMenuItem item)                                                            
+    # void ICollection[ISEMenuItem].Add(Microsoft.PowerShell.Host.ISE.ISEMenuItem item)     
+   
     [switch] $PassThru
  )
 
@@ -342,7 +353,9 @@ function Convert-Form {
   # ----------------------------------------
   $LinesNewScript = New-Object System.Collections.ArrayList(600)
   [void]$LinesNewScript.Add( (Add-Header $ProjectPaths.Destination $($MyInvocation.Line) $ProjectPaths.Source ))
-  
+  if ( $asIseAddon )
+  { [void]$LinesNewScript.Add('Function GenerateForm {') }
+
   if ($STA)
   { 
     Write-Debug "[Ajout Code] Add-TestApartmentState"
@@ -795,6 +808,12 @@ function Convert-Form {
       Write-Debug "[Ajout de code] Show-Window"
       [void]$LinesNewScript.Add('Show-Window')
    }
+  if ( $asIseAddon )
+  {  
+    [void]$LinesNewScript.Add("}# GenerateForm`r`n") 
+    [void]$LinesNewScript.Add('#Todo : Complete and uncomment the next line.')
+    [void]$LinesNewScript.Add("#`$psISE.CurrentPowerShellTab.AddOnsMenu.Submenus.Add('Todo DisplayName', {GenerateForm},'ALT+F5')")
+  }
   
      # Ecriture du fichier de sortie
   try {

@@ -124,13 +124,6 @@ Write-Debug "Add-ManageResources $SourceName.resources"
 
 @"
 
-function Get-ScriptDirectory
-{ #Return the directory name of this script
-  `$Invocation = (Get-Variable MyInvocation -Scope 1).Value
-  Split-Path `$Invocation.MyCommand.Path
-}
-
-`$ScriptPath = Get-ScriptDirectory
 `$ResourcesPath= Join-Path `$ScriptPath "$SourceName.resources"
 if ( !(Test-Path `$ResourcesPath))
 {

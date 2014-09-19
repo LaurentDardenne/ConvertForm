@@ -1,8 +1,12 @@
 ﻿#Peut être modifié selon vos besoins.
 
-Function Add-Header([String] $NomScript, $InvocationLine)
-{ #Crée l'entête du script
-
+Function Add-Header{
+ #Crée l'entête du script
+ param( 
+  [String] $NomScript,
+  $InvocationLine,
+  [string] $NomSource 
+)
  $Date="{0:d}" -f [DateTime]::Today #Format JJ/MM/AAAA
  $Line ="#" * 80
  
@@ -11,13 +15,14 @@ Function Add-Header([String] $NomScript, $InvocationLine)
 @"
 $Line 
 `#
-`#  Nom     : $NomScript
+`#  Nom     : $NomScript  
 `#  Version : 0.1
 `#  Auteur  :
 `#  Date    : le $Date
 `#
 `#  Généré sous PowerShell V$($PSVersionTable.PSVersion)
 `#  Appel   : $InvocationLine
+`#  Source  : $NomSource
 <#
 Historique :
 (Soit substitution CVS)

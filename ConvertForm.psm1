@@ -107,7 +107,7 @@ function Convert-Form {
      
     [switch] $HideConsole,
     
-    [switch] $asIseAddon, 
+    [switch] $asFunction, 
     #http://pshcreator.codeplex.com
     #Créer une fonction Launcher
     #ajouter la ligne d'appel :
@@ -124,6 +124,11 @@ function Convert-Form {
  )
 
  process {
+  
+  [Switch] $isVerbose= $null
+  [void]$PSBoundParameters.TryGetValue('Verbose',[REF]$isVerbose)
+  if ($isVerbose)
+  { $VerbosePreference='Continue' } 
   
   $_EA= $null
   [void]$PSBoundParameters.TryGetValue('ErrorAction',[REF]$_EA)
@@ -219,7 +224,7 @@ function Convert-Form {
     elseif (!$DestinationPathInfo.IsDirectoryExist($Filename))
     { Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ParameterMustBeAdirectory -F $FileName),'Destination')) } 
     
-    $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $DestinationPathInfo
+    $ProjectPaths=New-FilesName $psScriptRoot $SourceFI $DestinationPathInfo -verbose:$isVerbose 
   }
   else 
   { 
@@ -282,20 +287,23 @@ function Convert-Form {
         [void]$Components.Add($Ligne)
         Write-Debug "`t`t$Ligne"
        #todo test sous PS v2 et v3
-        $STAReason=[string]::Empty 
-        if ($Ligne.contains('System.Windows.Forms.WebBrowser') )
-        { $STAReason='component WebBrowser' }
-        if ($Ligne.contains('System.ComponentModel.BackgroundWorker') )
-        { $STAReason='component BackgroundWorker' }
-        if ( $Ligne -match "\s*this\.(.*)\.AllowDrop = true;$")
-        { $STAReason='Drag and Drop' }
-        if ( $Ligne -match "\s*this\.(.*)\.(AutoCompleteMode|AutoCompleteSource) = System.Windows.Forms.(AutoCompleteMode|AutoCompleteSource).(.*);$")
-        { $STAReason='AutoCompleteMode' }
-        if ( $STAReason -ne [string]::Empty)
-        { 
-          $STA=$true
-          Write-Warning ($ConvertFormMsgs.AddSTARequirement -F $STAReason)
-        }                  
+       if (-not $STA)
+       {
+          $STAReason=[string]::Empty 
+          if ($Ligne.contains('System.Windows.Forms.WebBrowser') )
+          { $STAReason='component WebBrowser' }
+          if ($Ligne.contains('System.ComponentModel.BackgroundWorker') )
+          { $STAReason='component BackgroundWorker' }
+          if ( $Ligne -match "\s*this\.(.*)\.AllowDrop = true;$")
+          { $STAReason='Drag and Drop' }
+          if ( $Ligne -match "\s*this\.(.*)\.(AutoCompleteMode|AutoCompleteSource) = System.Windows.Forms.(AutoCompleteMode|AutoCompleteSource).(.*);$")
+          { $STAReason='AutoCompleteMode' }
+          if ( $STAReason -ne [string]::Empty)
+          { 
+            $STA=$true
+            Write-Warning ($ConvertFormMsgs.AddSTARequirement -F $STAReason)
+          }
+       }                  
       }
      
      #La form nécessite-t-elle l'usage du fichier resx du projet ?
@@ -353,7 +361,7 @@ function Convert-Form {
   # ----------------------------------------
   $LinesNewScript = New-Object System.Collections.ArrayList(600)
   [void]$LinesNewScript.Add( (Add-Header $ProjectPaths.Destination $($MyInvocation.Line) $ProjectPaths.Source ))
-  if ( $asIseAddon )
+  if ( $asFunction )
   { [void]$LinesNewScript.Add('Function GenerateForm {') }
 
   if ($STA)
@@ -479,14 +487,24 @@ function Convert-Form {
 
   if ($IsUsedPropertiesResources)
   { 
-    [void]$LinesNewScript.Add( (Add-ManagePropertiesResources "$($ProjectPaths.Sourcename)Properties"))
-    New-ResourcesFile $ProjectPaths -isLiteral:$isLiteral -EA $ErrorActionPreference  
+    try {
+      Push-Location "$($ProjectPaths.SourcePath)\Resources"
+      
+      [void]$LinesNewScript.Add( (Add-ManagePropertiesResources "$($ProjectPaths.Sourcename)Properties"))
+      $rsxSource = Join-Path $ProjectPaths.SourcePath 'Properties\Resources.resx'
+      $rsxDestination = Join-Path $ProjectPaths.DestinationPath ($ProjectPaths.SourceName+'Properties.resources')
+      New-ResourcesFile -Source $rsxSource -Destination $rsxDestination -isLiteral:$isLiteral -EA $ErrorActionPreference -verbose:$isVerbose
+    } finally {
+      Pop-Location
+    }
   }
 
   if ($IsUsedResources)
   { 
     [void]$LinesNewScript.Add( (Add-ManageResources $ProjectPaths.Sourcename)) 
-    # todo New-PropertiesResourcesFile $ProjectPaths -isLiteral:$isLiteral -EA $ErrorActionPreference 
+  	$rsxSource = Join-Path $ProjectPaths.SourcePath ($ProjectPaths.SourceName+'.resx')
+    $rsxDestination = Join-Path $ProjectPaths.DestinationPath ($ProjectPaths.SourceName+'.resources')
+    New-ResourcesFile -Source $rsxSource -Destination $rsxDestination -isLiteral:$isLiteral -EA $ErrorActionPreference -verbose:$isVerbose 
   }
 
   #On ajoute la création de la form avant tout autre composant
@@ -808,9 +826,10 @@ function Convert-Form {
       Write-Debug "[Ajout de code] Show-Window"
       [void]$LinesNewScript.Add('Show-Window')
    }
-  if ( $asIseAddon )
+  if ( $asFunction )
   {  
-    [void]$LinesNewScript.Add("}# GenerateForm`r`n") 
+    [void]$LinesNewScript.Add("}# GenerateForm`r`n")
+    [void]$LinesNewScript.Add("#Todo : When you use several addons, rename the 'GenerateForm' function.") 
     [void]$LinesNewScript.Add('#Todo : Complete and uncomment the next line.')
     [void]$LinesNewScript.Add("#`$psISE.CurrentPowerShellTab.AddOnsMenu.Submenus.Add('Todo DisplayName', {GenerateForm},'ALT+F5')")
   }
@@ -926,7 +945,7 @@ function Test-PSScript {
 }#Test-PSScript
 
 Function OnRemoveConvertForm {
- Remove-Module Transform
+  Remove-Module Transform
 }#OnRemovePsIonicZip
  
 $MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = { OnRemoveConvertForm }

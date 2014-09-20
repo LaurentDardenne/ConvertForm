@@ -3,8 +3,6 @@
 # Objet   : Regroupe des fonctions de transformation de 
 #           code CS en code PowerShell.
 
-#todo traduire commentaire Fr dans le code généré
-
 Import-LocalizedData -BindingVariable TransformMsgs -Filename TransformLocalizedData.psd1 -EA Stop
 
  #Création du header
@@ -130,12 +128,12 @@ if ( !(Test-Path `$ResourcesPath))
   Write-Error `"$($TransformMsgs.ManageResourcesError)`"
   break; 
 }
-  #Gestion du fichier des ressources
+  $($TransformMsgs.ManageResourcesComment)
 `$Reader = new-Object System.Resources.ResourceReader(`$ResourcesPath)
 `$Resources=@{}
 `$Reader.GetEnumerator()|% {`$Resources.(`$_.Name)=`$_.value}
  
- # Création des composants
+ $($TransformMsgs.CreateComponentComment)
 "@         
 }#Add-ManageResources
 
@@ -313,6 +311,7 @@ function ConvertTo-Line([System.Text.RegularExpressions.Match] $MatchStr, [Array
 
 function New-FilesName{
   #Construit les paths et noms de fichier à partir de $Source et $Destination
+ [CmdletBinding()] 
  param(
    [string] $ScriptPath,
     
@@ -321,7 +320,11 @@ function New-FilesName{
     #PSPathInfo ou string
    $Destination
  )
-
+  [Switch] $isVerbose= $null
+  [void]$PSBoundParameters.TryGetValue('Verbose',[REF]$isVerbose)
+  if ($isVerbose)
+  { $VerbosePreference='Continue' } 
+  
   #Le fichier de ressource posséde une autre construction que le nom du fichier source
   #On garde le nom de la Form car on peut avoir + fichiers .Designer.cs
    # en entrée                 : -Source C:\VS\Projet\PS\Form1.Designer.cs -Destination C:\Temp
@@ -367,42 +370,45 @@ function New-ResourcesFile{
 #Compile le fichier contenant les ressources d'un formulaire, ex : Form1.resx
   [CmdletBinding()] 
  param (
-  $ProjectPaths,
+   [string] $Source,
+   [string] $Destination,
   [switch] $isLiteral
  ) 
   
-  Write-Verbose 'Compile les ressources'
+  [Switch] $isVerbose= $null
+  [void]$PSBoundParameters.TryGetValue('Verbose',[REF]$isVerbose)
+  if ($isVerbose)
+  { $VerbosePreference='Continue' }
+    
+  Write-Verbose $TransformMsgs.CompileResource
    #On génére le fichier de ressources
    #todo + versions de resgen ?
    #   http://blogs.msdn.com/b/visualstudio/archive/2010/06/18/resgen-exe-error-an-attempt-was-made-to-load-a-program-with-an-incorrect-format.aspx
    #        connect.microsoft.com/VisualStudio/feedback/details/532584/error-when-compiling-resx-file-seems-related-to-beta2-bug-5252020
    #  http://stackoverflow.com/questions/9190885/could-not-load-file-or-assembly-system-drawing-or-one-of-its-dependencies-erro
   $Resgen="$psScriptRoot\ResGen.exe" 
-   #todo suppose que psScriptRoot ne contient pas de globbing 
-  if ( !(Test-Path $Resgen))
+  if ( !(Test-Path -LiteralPath $Resgen))
   { Write-Error ($TransformMsgs.ResgenNotFound -F $Resgen) }
   else
   {
-	 $SrcResx = Join-Path $ProjectPaths.SourcePath ($ProjectPaths.SourceName+'.resx')
-     $DestResx = Join-Path $ProjectPaths.DestinationPath ($ProjectPaths.SourceName+'.resources')
-     $Log="$DestResx.log"
-     'Resgen','SrcResx','DestResx','Log'|
+     $Log="$Destination.log"
+     'Resgen','Source','Destination','Log'|
        Get-Variable |
        Foreach { Write-Debug ('{0}={1}' -F $_.Name,$_.Value) }
      
      if ($isLiteral)
-     { $FileResourceExist=Test-Path -LiteralPath $SrcResx }
+     { $FileResourceExist=Test-Path -LiteralPath $Source }
      else
-     { $FileResourceExist=Test-Path -Path $SrcResx }
+     { $FileResourceExist=Test-Path -Path $Source }
 	 
      if ($FileResourceExist)
 	 {
 	    #Redirige le handle d'erreur vers le handle standard de sortie
-	   $ResultExec=.$Resgen $SrcResx $DestResx 2>&1
+	   $ResultExec=.$Resgen $Source $Destination 2>&1
 	   if ($LastExitCode -ne 0)
 	   { Write-Error ($TransformMsgs.CreateResourceFileError -F $LastExitCode,$log) }
 	   else 
-       { Write-Verbose ($TransformMsgs.CreateResourceFile -F $DestResx) }
+       { Write-Verbose ($TransformMsgs.CreateResourceFile -F $Destination) }
        
        try {
          if ($isLiteral)
@@ -414,7 +420,7 @@ function New-ResourcesFile{
        } 
 	 }
      else
-     { Write-Error ($TransformMsgs.ResourceFileNotFound -F $SrcResx) }
+     { Write-Error ($TransformMsgs.ResourceFileNotFound -F $Source) }
   } 
 } #New-ResourcesFile
 
@@ -463,26 +469,6 @@ function Read-Choice{
   $Choices = [System.Management.Automation.Host.ChoiceDescription[]]($Yes,$No)
   $Host.UI.PromptForChoice($Caption,$Message,$Choices,([byte]($DefaultChoice -eq 'No')))
 }
-
-# todo function Read-Resources {
-# #todo http://msdn.microsoft.com/fr-fr/library/t69a74ty%28v=vs.90%29.aspx
-# # Lit le fichier resx du répertoire properties du projet : TestFrm.Properties.Resources         
-#     if ( !(Test-Path $ResourcesPath))
-#   {
-#     Write-Error "Le fichier de ressources n'existe pas : $ResourcesPath"
-#     break; 
-#   }
-# 
-#   resgen G:\PS\ConvertForm\TestsWinform\Base\Properties\Resources.resx $env:temp
-# 
-#   $ResourcesPath= Join-Path $ScriptPath "$env:temp($Name).resources"
-#     #Gestion du fichier des ressources
-#   $Reader = new-Object System.Resources.ResourceReader($ResourcesPath)
-#   $Resources=@{}
-#   $Reader.GetEnumerator()|% {$Resources.($_.Name)=$_.value}
-#   if ($Resources.Count -ne 0)
-#   {return $Resources}          
-#}
 
 #Functions Windows
 function Add-Win32FunctionsType {

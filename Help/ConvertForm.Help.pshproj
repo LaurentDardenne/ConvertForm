@@ -177,6 +177,10 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
+          <Description>Problème potentiel: la form principale masque la console, la fermeture de la seconde fenêtre réaffichera la console
+  If ( $HideConsole -and $noLoadAssemblies )
+  { Write-Warning $ConvertFormMsgs.ParameterHideConsoleNotNecessary } 
+</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -253,15 +257,15 @@ md C:\Temp\MyForm
 Convert-Form -Path $FormPath -Destination C:\Temp\MyForm -Force
 
 </Cmd>
-          <Description>Converti le fichier Form1.Designer.cs en un script powershell 'C:\Temp\MyFormForm1.ps1'.
+          <Description>Converti le fichier Form1.Designer.cs en un script powershell 'C:\Temp\MyForm\Form1.ps1'.
 La présence du paramètre -Force écrase le fichier s'il existe déjà.</Description>
         </Example>
         <Example>
           <Name>Example 3</Name>
-          <Cmd>$ScriptWinform=Convert-Form -LiteralPath 'ProjetPath\TestsWinform\Test21LiteralPath[AG]Naming\Frm[AG].Designer.cs -DestinationLiteral C:\Temp\FormAG -Encoding unicode -passthru -Verbose</Cmd>
-          <Description>Converti un fichier, dont le nom contient des jokers Powershell, en un script Powershell "C:\Temp\FormAG Frm[AG].ps1". L'usage des paramètres -LiteralPath et -DestinationLiteral sont ici nécessaire
+          <Cmd>$ScriptWinform=Convert-Form -LiteralPath 'ProjetPath\TestsWinform\Test21LiteralPath[AG]Naming\Frm[AG].Designer.cs' -DestinationLiteral C:\Temp\FormAG -Encoding unicode -passthru -Verbose</Cmd>
+          <Description>Converti un fichier, dont le nom contient des jokers Powershell, en un script Powershell "C:\Temp\FormAG Frm[AG].ps1". L'usage des paramètres -LiteralPath et -DestinationLiteral sont ici nécessaire.
 
-Le paramètre -Encoding encode en Unicode le fichier résultant. Par default chque fichier est encodé en UTF8.
+Le paramètre -Encoding encode en Unicode le fichier résultant. Par default chaque fichier est encodé en UTF8.
 
 Le paramètre -Verbose détail les opérations.
 

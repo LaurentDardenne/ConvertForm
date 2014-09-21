@@ -46,7 +46,7 @@ Function Add-EventComponent([String] $ComponentName, [String] $EventName)
    # où le nom de l'événement est celui du SDK .NET
    #On construit le nom de la fonction appellée par le gestionnaire d'événement
   $OnEvent_Name="On{0}_{1}" -f ($EventName,$ComponentName)
-  $Fonction ="function $OnEvent_Name {{`r`n`t{0}`r`n}}`r`n" -f ($UnderConstruction)
+  $Fonction ="`r`nfunction $OnEvent_Name {{`r`n`t{0}`r`n}}`r`n" -f ($UnderConstruction)
    #On double le caractère '{' afin de pouvoir l'afficher
   $EvtHdl= "`${0}.Add_{1}( {{ {2} }} )`r`n" -f ($ComponentName, $EventName, $OnEvent_Name)
 # Here-string    
@@ -67,8 +67,8 @@ function Add-SpecialEventForm{
     #   -déterminer la cause de la fermeture
     #   -autoriser ou non la fermeture
 
- $Entête = 'function OnFormClosing_{0}{{' -F $FormName
- $Close  = '${0}.Add_FormClosing( {{ OnFormClosing_{0}}} )' -F $FormName
+ $Entête = "`r`nfunction OnFormClosing_{0}{{" -F $FormName
+ $Close  = "`r`n`${0}.Add_FormClosing( {{ OnFormClosing_{0}}} )" -F $FormName
 
  $CallHidefnct=""
    #On affiche la fenêtre, mais on cache la console 
@@ -76,7 +76,7 @@ function Add-SpecialEventForm{
   {$CallHidefnct="Hide-Window;"}
    #Replace au premier plan la fenêtre en l'activant.
    # Form1.topmost=$true est inopérant
- $Shown  = '${0}.Add_Shown({{{1}${0}.Activate()}})' -F $FormName,$CallHidefnct
+ $Shown  = "`r`n`${0}.Add_Shown({{{1}`${0}.Activate()}})" -F $FormName,$CallHidefnct
 
 # Here-string  
 @"
@@ -106,6 +106,7 @@ function Get-ScriptDirectory
 }
 
 `$ScriptPath = Get-ScriptDirectory
+
 "@         
 }#Add-GetScriptDirectory
 

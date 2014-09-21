@@ -1,5 +1,10 @@
 #PowerShell Form Converter
 
+#todo : Ajout try /finally pour
+# $ModalResult=$WinForm.ShowDialog()
+# $WinForm.Dispose()
+# Show-Window
+
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
  
  #On charge les méthodes de construction et d'analyse du fichier C#
@@ -99,32 +104,18 @@ function Convert-Form {
      [ValidateSet("unknown", "string", "unicode", "bigendianunicode", "utf8", "utf7", "utf32", "ascii", "default", "oem")]
     [string] $Encoding='default',
     
-    [switch] $noLoadAssemblies, 
-    
-    [switch] $noShowDialog,
-     
     [switch] $Force,
      
     [switch] $HideConsole,
     
-    [switch] $asFunction, 
-    #http://pshcreator.codeplex.com
-    #Créer une fonction Launcher
-    #ajouter la ligne d'appel :
-    # $psISE.CurrentPowerShellTab.AddOnsMenu.Submenus.Add("WMI AutoScript", {LaunchMain},"ALT+F5") | out-Null
-    #Exemple : "G:\PS\ConvertForm\Tests\WMI Explorer.png"
-    #
-    # OverloadDefinitions                                                                                                 
-    # -------------------                                                                                                 
-    # Microsoft.PowerShell.Host.ISE.ISEMenuItem Add(string displayName, scriptblock action, System.Windows.Input.KeyGesture shortcut)                                                                           
-    # void Add(Microsoft.PowerShell.Host.ISE.ISEMenuItem item)                                                            
-    # void ICollection[ISEMenuItem].Add(Microsoft.PowerShell.Host.ISE.ISEMenuItem item)     
-   
-    [switch] $PassThru
+    [switch] $asFunction,
+    
+    [switch] $Secondary,
+    
+    [switch] $Passthru
  )
 
  process {
-  
   [Switch] $isVerbose= $null
   [void]$PSBoundParameters.TryGetValue('Verbose',[REF]$isVerbose)
   if ($isVerbose)
@@ -143,9 +134,10 @@ function Convert-Form {
      #Priorité: On remplace sa valeur
     $ErrorActionPreference=$_EA
   }
-   
-  [boolean] $STA=$false
   
+  if ($Secondary -and $HideConsole)  
+  { Throw (New-Object System.ArgumentException($ConvertFormMsgs.ParameterIsNotAllow)) }
+ 
   $isLiteral=$PsCmdlet.ParameterSetName -eq "LiteralPath"
   
   $isDestination=$PSBoundParameters.ContainsKey('Destination')
@@ -153,6 +145,8 @@ function Convert-Form {
   if ($isDestination -and $isDestinationLiteral)
   { Throw (New-Object System.ArgumentException($ConvertFormMsgs.ParameterIsExclusif)) }
   
+  [boolean] $STA=$false
+
   $isDestinationBounded=$isDestination -or $isDestinationLiteral
   
   if ($isDestinationLiteral) 
@@ -231,12 +225,7 @@ function Convert-Form {
      #$Destination n'est pas utilisable ou n'a pas été précisé ( $null -> String.Empty) 
     $ProjectPaths=New-FilesName $psScriptRoot $SourceFI
   }
-   
-   #Teste s'il n'y a pas de conflit dans les switchs
-   #Problème potentiel: la form principale masque la console, la fermeture de la seconde fenêtre réaffichera la console
-  If ( $HideConsole -and $noLoadAssemblies )
-  { Write-Warning $ConvertFormMsgs.ParameterHideConsoleNotNecessary } 
-   
+
   Write-Debug "Fin des contrôles."
 
   # Collection des lignes utiles de InitializeComponent() : $Components
@@ -361,21 +350,50 @@ function Convert-Form {
   # ----------------------------------------
   $LinesNewScript = New-Object System.Collections.ArrayList(600)
   [void]$LinesNewScript.Add( (Add-Header $ProjectPaths.Destination $($MyInvocation.Line) $ProjectPaths.Source ))
-  if ( $asFunction )
-  { [void]$LinesNewScript.Add('Function GenerateForm {') }
-
+  
+  If(-not $Secondary)
+  {
+    [void]$LinesNewScript.Add( (Add-GetScriptDirectory) )
+  }
+ 
+   # Le code STA et l'appel de l'API ne seront 
+   # pas dans la fonction si -asFunction est précisé
   if ($STA)
   { 
+     #Dans le cas d'usage de deux fenêtres, l'une ou l'autre peut utiliser 
+     #des composants nécessitant le mode STA. 
+     #L'utilisateur remaniera les scripts générés. 
     Write-Debug "[Ajout Code] Add-TestApartmentState"
     [void]$LinesNewScript.Add( (Add-TestApartmentState) ) 
   } 
     
-  If ($HideConsole -and !$noLoadAssemblies)
+  If ($HideConsole)
   { 
+     #Dans le cas d'usage de deux fenêtres, la génération de l'une ou de l'autre ou des deux
+     #peut utiliser le paramètre HideConsole. 
+     #L'utilisateur remaniera les scripts générés.    
     Write-Debug "[Ajout Code] Win32FunctionsType"
     [void]$LinesNewScript.Add((Add-Win32FunctionsType))
     [void]$LinesNewScript.Add((Add-Win32FunctionsWrapper))
   }
+
+  if( $Secondary)
+  { $FunctionName='GenerateSecondaryForm' }
+  else
+  { $FunctionName='GeneratePrimaryForm' }
+  
+  if ( $asFunction )
+  { 
+    [void]$LinesNewScript.Add(@"
+Function $FunctionName {
+ param ( 
+    [ValidateNotNullOrEmpty()]
+    [Parameter(Position=0,Mandatory=`$true)]
+  [string] `$ScriptPath
+ )
+"@)
+  }
+
   
   [boolean] $IsTraiteMethodesForm = $False # Jusqu'à la rencontre de la chaîne " # Form1  "
   [boolean] $IsUsedResources= $false       # On utilise un fichier de ressources
@@ -474,16 +492,15 @@ function Convert-Form {
   #  Fin de traitements des propriétés "multi-lignes"
   #----------------------------------------------------------------------------- 
   
-  If(!$noLoadAssemblies)
+  If(-not $Secondary)
   {
      Write-Debug "[Ajout Code] chargement des assemblies"
      $Assemblies=@('System.Windows.Forms','System.Drawing')
      
      [void]$LinesNewScript.Add($ConvertFormMsgs.LoadingAssemblies)
      Add-LoadAssembly $LinesNewScript $Assemblies
+    #[void]$LinesNewScript.Add( (Add-GetScriptDirectory) )
   }
-
-  [void]$LinesNewScript.Add( (Add-GetScriptDirectory) )
 
   if ($IsUsedPropertiesResources)
   { 
@@ -801,39 +818,43 @@ function Convert-Form {
   { $BPLigneRead,$BPLigneWrite | Remove-PSBreakpoint }
   Write-Debug "Conversion du code CSharp effectuée."
   
-   [void]$LinesNewScript.Add( (Add-SpecialEventForm $FormName -HideConsole:$HideConsole))
-   If ($IsUsedResources)
-   {  
-      Write-Debug "[Ajout Code]Libération des ressources"
-      [void]$LinesNewScript.Add($ConvertFormMsgs.DisposeResources)
-      [void]$LinesNewScript.Add('$Reader.Close()') 
-   }
-
-   If ($IsUsedPropertiesResources)
-   {  
-      Write-Debug "[Ajout Code]Libération des ressources des propriétés du projet"
-      [void]$LinesNewScript.Add('$PropertiesReader.Close()') 
-   }
+  [void]$LinesNewScript.Add( (Add-SpecialEventForm $FormName -HideConsole:$HideConsole))
    
-   If (!$noShowDialog)
-   { 
-      Write-Debug "[Ajout Code] Appel à la méthode ShowDialog/Dispose"
-      [void]$LinesNewScript.Add("`$ModalResult=`$$FormName.ShowDialog()") 
-      [void]$LinesNewScript.Add($ConvertFormMsgs.DisposeForm)
-       #Showdialog() need explicit Dispose()
-      [void]$LinesNewScript.Add("`$$FormName.Dispose()")
-   }
-   If (!$noShowDialog -and $HideConsole )
-   {
-      Write-Debug "[Ajout de code] Show-Window"
-      [void]$LinesNewScript.Add('Show-Window')
-   }
+  Write-Debug "[Ajout Code] Appel à la méthode ShowDialog/Dispose"
+  [void]$LinesNewScript.Add("`$ModalResult=`$$FormName.ShowDialog()")
+
+  If ($IsUsedResources)
+  {  
+    Write-Debug "[Ajout Code]Libération des ressources"
+    [void]$LinesNewScript.Add($ConvertFormMsgs.DisposeResources)
+    [void]$LinesNewScript.Add('$Reader.Close()') 
+  }
+  
+  If ($IsUsedPropertiesResources)
+  {  
+    Write-Debug "[Ajout Code]Libération des ressources des propriétés du projet"
+    [void]$LinesNewScript.Add('$PropertiesReader.Close()') 
+  }
+
+  [void]$LinesNewScript.Add($ConvertFormMsgs.DisposeForm)
+  #Showdialog() need explicit Dispose()
+  [void]$LinesNewScript.Add("`$$FormName.Dispose()")
+  
+  If ($HideConsole)
+  {
+     Write-Debug "[Ajout de code] Show-Window"
+     [void]$LinesNewScript.Add('Show-Window')
+  }
+  
   if ( $asFunction )
   {  
-    [void]$LinesNewScript.Add("}# GenerateForm`r`n")
-    [void]$LinesNewScript.Add("#Todo : When you use several addons, rename the 'GenerateForm' function.") 
-    [void]$LinesNewScript.Add('#Todo : Complete and uncomment the next line.')
-    [void]$LinesNewScript.Add("#`$psISE.CurrentPowerShellTab.AddOnsMenu.Submenus.Add('Todo DisplayName', {GenerateForm},'ALT+F5')")
+    [void]$LinesNewScript.Add("}# ${FunctionName}`r`n")
+    if (-not $Secondary)
+    {
+      [void]$LinesNewScript.Add("#Todo : When you use several addons, rename the '$FunctionName' function.") 
+      [void]$LinesNewScript.Add('#Todo : Complete and uncomment the next line.')
+      [void]$LinesNewScript.Add("#`$psISE.CurrentPowerShellTab.AddOnsMenu.Submenus.Add('Todo DisplayName', {$FunctionName},'ALT+F5')")
+    }
   }
   
      # Ecriture du fichier de sortie
@@ -875,10 +896,7 @@ function Convert-Form {
    if ($SyntaxErrors.Count -gt 0)
    { Write-Error -Message ($ConvertFormMsgs.SyntaxError -F $ProjectPaths.Destination) -Category "SyntaxError" -ErrorId "CreateScriptError" -TargetObject  $ProjectPaths.Destination }
      
-   If ($noShowDialog -and $HideConsole)
-   { Write-Verbose $ConvertFormMsgs.CallShowWindow }
-   
-   if ($passThru)
+   if ($Passthru)
    {
      Write-Debug "Emission de l'objet fichier : $($ProjectPaths.Destination)"
      Get-ChildItem -LiteralPath $ProjectPaths.Destination

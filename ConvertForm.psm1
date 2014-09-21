@@ -714,6 +714,8 @@ function Convert-Form {
 #     $rdbtnEnglish.Name = "rdbtnEnglish"
 #     $rdbtnEnglish.TabStop = $true
 #     $toolTipFr.SetToolTip($rdbtnEnglish, resources.GetString("rdbtnEnglish.ToolTip"))  
+
+
   #
   #Projet: ConvertForm\TestsWinform\Test19Localisation\FrmMain.Designer.cs
   #
@@ -879,10 +881,10 @@ function Convert-Form {
    if ($passThru)
    {
      Write-Debug "Emission de l'objet fichier : $($ProjectPaths.Destination)"
-     gci $ProjectPaths.Destination
+     Get-ChildItem -LiteralPath $ProjectPaths.Destination
    } 
    Write-Debug ("[{0}] Fin d'analyse du script." -F $MyInvocation.MyCommand)
-   Write-Verbose ($ConvertFormMsgs.ConversionComplete-F $ProjectPaths.Source)
+   Write-Verbose ($ConvertFormMsgs.ConversionComplete -F $ProjectPaths.Source)
   }#process
 } #Convert-Form
 

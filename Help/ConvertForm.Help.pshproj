@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0"?>
 <ModuleObject xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Name>ConvertForm</Name>
   <ModuleType>Script</ModuleType>
@@ -19,12 +19,26 @@
         <Description>Ce script permet de convertir un fichier CSharp contenant les déclarations d'une WinForm en un script PowerShell. 
 La construction d'une fenêtre dans Visual Studio génère un fichier nommé NomDuFichier.Designer.cs.
 C'est ce fichier qui constitue la source de ce script, on en extrait les lignes de déclaration des composants insérés sur la fenêtre de votre projet Winform. 
-Si votre projet contient plusieurs Formulaires, vous devrez exécuter ce script pour chacune d'entre elles.
+Si votre projet contient plusieurs Formulaires, vous devrez exécuter ce script pour chacun d'entre eux.
 
 Si dans Visual Studio vous déclarez des événements spécifiques pour chaque composant, ce script construira une fonction pour chacun de ces événements. Le code C# contenu dans le corps de la méthode n'est pas converti.  
 
-L'usage de certains composants graphique nécessite le modèle de thread STA, celui-ci peut être modifié à l'aide du paramètre -STA de Powershell.exe.</Description>
-        <Notes />
+L'usage de certains composants graphique nécessite le modèle de thread STA, celui-ci peut être modifié à l'aide du paramètre -STA de Powershell.exe. Dans ce cas lors de l'exécution du script généré un contrôle du modèle de thread sera effectué.
+
+La réussite de l'appel à Convert-Form générera au moins le fichier suivant :
+ Form1.ps1 : script powershell de déclaration du formulaire. Le nom reprend une partie nom de fichier csharp 'xxx.Designer.cs'.
+
+Cet appel peut également générer les fichiers suivants :
+ Form1Properties.resources      : Fichier de ressources des propriétés du projet Winform
+ Form1Properties.resources.log  : fichier de log associé créé par le programme Resgen.exe
+
+ Form1.resources                : Fichier de ressources sécifique à un formulaire
+ Form1.resources.log            : fichier de log associé créé par le programme Resgen.exe
+
+
+</Description>
+        <Notes>Site web du projet ConvertForm : https://convertform.codeplex.com/
+</Notes>
         <ReturnType>System.IO.FileInfo</ReturnType>
         <ReturnTypeDescription>Si le switch -Passthru est précisé, sinon ne renvoi aucune donnée. </ReturnTypeDescription>
       </GeneralHelp>
@@ -50,7 +64,7 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ValidateNotNullOrEmptyAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>Spécifie le chemin d’accès à un élément. Les caractères génériques sont autorisés.</Description>
+          <Description>Spécifie le chemin d’accès d'un fichier Designer.cs. Les caractères génériques sont autorisés.</Description>
           <Globbing>true</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -89,7 +103,9 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
             <string>System.Management.Automation.ParameterAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>Spécifie le chemin d’accès du répertoire contenant le script généré. Contrairement à Destination, la valeur de DestinationLiteral est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.
+          <Description>Spécifie le chemin d’accès du répertoire contenant le script généré. Contrairement à Destination, la valeur de DestinationLiteral est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. 
+Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.
+
 Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
@@ -110,7 +126,7 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
             <string>System.Management.Automation.ParameterAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>Consulter l'aide du provider FileSystem, section PARAMÈTRES DYNAMIQUES : Get-Help FileSystem</Description>
+          <Description>Consultez l'aide du provider FileSystem, section PARAMÈTRES DYNAMIQUES : Get-Help FileSystem</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -148,7 +164,7 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>Masque la console lors de l'appel à ShowDialog() du formulaire principal.</Description>
+          <Description>Masque la console lors de l'appel à la méthode ShowDialog() du formulaire principal.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -168,7 +184,7 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
           </Attributes>
           <Aliases />
           <Description>Le code du script généré est inséré dans une fonction.
-Par défaut sont nom est 'GeneratePrimaryForm', si le paramètre -Secondary est précisé, alors le nom de la fonction est 'GenerateSecondaryForm'.</Description>
+Par défaut son nom est 'GeneratePrimaryForm', si le paramètre -Secondary est précisé, alors le nom de la fonction est 'GenerateSecondaryForm'.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -191,7 +207,10 @@ Par défaut sont nom est 'GeneratePrimaryForm', si le paramètre -Secondary est 
           <Aliases>
             <string>PSPath</string>
           </Aliases>
-          <Description>Spécifie le chemin d’accès d'un élément. Contrairement à Path, la valeur de LiteralPath est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.</Description>
+          <Description>Spécifie le chemin d’accès d'un fichier Designer.cs. Contrairement à Path, la valeur de LiteralPath est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique.
+
+Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples.
+Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -241,7 +260,9 @@ Si le paramètre -AsFunction est précisé, alors le nom de la fonction sera 'Ge
           <Cmd>$FormPath = "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
 Convert-Form -Path $FormPath 
 </Cmd>
-          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1"</Description>
+          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
+
+Le script généré concerne un formulaire principal.</Description>
         </Example>
         <Example>
           <Name>Example 2</Name>
@@ -251,27 +272,38 @@ Convert-Form -Path $FormPath -Destination C:\Temp\MyForm -Force
 
 </Cmd>
           <Description>Converti le fichier Form1.Designer.cs en un script powershell 'C:\Temp\MyForm\Form1.ps1'.
-La présence du paramètre -Force écrase le fichier s'il existe déjà.</Description>
+La présence du paramètre -Force écrase le fichier s'il existe déjà.
+
+Le script généré concerne un formulaire principal.</Description>
         </Example>
         <Example>
           <Name>Example 3</Name>
-          <Cmd>$ScriptWinform=Convert-Form -LiteralPath 'ProjetPath\TestsWinform\Test21LiteralPath[AG]Naming\Frm[AG].Designer.cs' -DestinationLiteral C:\Temp\FormAG -Encoding unicode -passthru -Verbose</Cmd>
-          <Description>Converti un fichier, dont le nom contient des jokers Powershell, en un script Powershell "C:\Temp\FormAG Frm[AG].ps1". L'usage des paramètres -LiteralPath et -DestinationLiteral sont ici nécessaire.
+          <Cmd>$ScriptWinform=Convert-Form -LiteralPath "$ProjetPath\TestsWinform\Test21LiteralPath[AG]Naming\Frm[AG].Designer.cs" -DestinationLiteral C:\Temp\FormAG -Encoding unicode -passthru -Verbose</Cmd>
+          <Description>Converti un fichier, dont le nom contient des jokers Powershell, en un script Powershell "C:\Temp\FormAG Frm[AG].ps1". L'usage des paramètres -LiteralPath et -DestinationLiteral sont ici nécessaires.
 
 Le paramètre -Encoding encode en Unicode le fichier résultant. Par default chaque fichier est encodé en UTF8.
 
 Le paramètre -Verbose détail les opérations.
 
-Le paramètre -Passthru renvoie dans la variable $ScriptWinform l'objet fichier généré.</Description>
+Le paramètre -Passthru renvoie dans la variable $ScriptWinform l'objet fichier généré.
+
+Le script généré concerne un formulaire principal.</Description>
         </Example>
         <Example>
           <Name>Example 4</Name>
+          <Cmd>$FormPath = "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
+Convert-Form -Path $FormPath -Secondary</Cmd>
+          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
+
+Le script ne contient pas le code chargement des assemblies, celui-ci se trouve dans le script d'un formulaire principal.
+Le script généré concerne donc un formulaire secondaire.</Description>
         </Example>
         <Example>
           <Name>Example 5</Name>
           <Cmd>Convert-Form Form1.Designer.cs -HideConsole </Cmd>
-          <Description>Converti la form en lui ajoutant le code cachant la fenêtre de la console durant le temps d'exécution de la fenêtre.
-On ajoute également l'appel au script APiWindows.ps1. todo</Description>
+          <Description>Converti la form en lui ajoutant le code masquant la fenêtre de la console powershell durant le temps d'exécution de la fenêtre.
+
+Le script généré concerne un formulaire principal.</Description>
         </Example>
       </Examples>
       <RelatedLinks />
@@ -313,7 +345,14 @@ On ajoute également l'appel au script APiWindows.ps1. todo</Description>
       <Noun>PSScript</Noun>
       <GeneralHelp>
         <Synopsis>Valide la syntaxe d'un fichier powershell.</Synopsis>
-        <Description>Valide la syntaxe d'un fichier powershell.</Description>
+        <Description>Valide la syntaxe d'un fichier powershell.
+Si le code powershell contient des erreurs de syntaxe, la fonction renvoie une collection d'erreur.
+
+Si un des fichiers à tester n'existe pas, la fonction émet un warning.
+</Description>
+        <Notes>Source : http://blogs.microsoft.co.il/blogs/scriptfanatic/archive/2009/09/07/parsing-powershell-scripts.aspx</Notes>
+        <ReturnType>System.Management.Automation.PSParseError</ReturnType>
+        <ReturnTypeDescription>En cas d'erreur renvoie la ou les erreurs de syntaxe, sinon ne renvoie rien</ReturnTypeDescription>
       </GeneralHelp>
       <Syntax>
         <string>Test-PSScript [-FilePath] &lt;String[]&gt; [-IncludeSummaryReport]</string>
@@ -340,7 +379,11 @@ On ajoute également l'appel au script APiWindows.ps1. todo</Description>
             <string>PSPath</string>
             <string>FullName</string>
           </Aliases>
-          <Description>Spécifie le chemin d’accès d'un élément. La valeur de FilePath est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.</Description>
+          <Description>Spécifie le chemin d’accès d'un nom de fichier ou d'un tableau de nom de fichiers. La valeur de chaque entrée du tableau FilePath est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. 
+
+Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples.
+Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.
+</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -359,11 +402,36 @@ On ajoute également l'appel au script APiWindows.ps1. todo</Description>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>Affiche un résultat sommaire des fichiers testés.</Description>
+          <Description>Affiche un résultat sommaire des fichiers testés via un appel à Write-Verbose.
+</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
       </Parameters>
-      <Examples />
+      <Examples>
+        <Example>
+          <Name>Example 1</Name>
+          <Cmd>$SyntaxErrors=@(Test-PSScript -Filepath $FilePSPS1)
+
+if ($SyntaxErrors.Count -gt 0)
+{ Write-Error "Syntax error" }
+     </Cmd>
+          <Description>Si le fichier $FilePSPS1 contient au moins une erreurs de syntaxe, l'appelant génèrera une erreur.</Description>
+        </Example>
+        <Example>
+          <Name>Example 2</Name>
+          <Cmd>$SyntaxErrors=@(Test-PSScript -Filepath $FilePSPS1 -IncludeSummaryReport)
+
+if ($SyntaxErrors.Count -gt 0)
+{ Write-Error "Syntax error" }
+</Cmd>
+          <Description>Si le fichier $FilePSPS1 contient au moins une erreurs de syntaxe, l'appelant génèrera une erreur. 
+Le commentaire suivant sera également affiché sur la console :
+COMMENTAIRES : 1 script(s) processed, 1 script(s) contain syntax errors,  0 file(s) unknown.
+
+Sinon ce sera celui-ci:
+COMMENTAIRES : 1 script(s) processed, 0 script(s) contain syntax errors,  0 file(s) unknown.</Description>
+        </Example>
+      </Examples>
       <RelatedLinks />
       <SupportInformation>
         <ADChecked>false</ADChecked>

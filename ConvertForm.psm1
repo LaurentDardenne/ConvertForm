@@ -689,19 +689,14 @@ Function $FunctionName {
          $Ligne = $Ligne -replace '^(.*?) = \(\((.*)\)\(resources.GetObject\("(.*)"\)\)\)$', '$1= [$2] $Resources["$3"]'
       }
 
-#       Write-debug "IsUsedPropertiesResources=$IsUsedPropertiesResources"
-#       Write-debug "`t $Ligne"
-#       write-debug "matches $($Ligne -match '^(?<Object>.*) = global::(.*?\.Properties.Resources\.)(?<Key>.*);$')"
-      write-debug '----'
       if ($IsUsedPropertiesResources -and ($Ligne -match '^(?<Object>.*) = global::(.*?\.Properties.Resources\.)(?<Key>.*)$'))
       { 
-        #todo culture ResourceManager.GetObject("Go", resourceCulture);
-        # transforme : this.pictureBox1.Image = global::TestFrm.Properties.Resources.Koala;
+        # Transforme : this.pictureBox1.Image = global::TestFrm.Properties.Resources.Koala;
         #  en        : pictureBox1.Image = $PropertiesResources["Koala"]
         #
         # Koala est le nom d'une clé du fichier resx du projet : 
-        # TestFrm.Properties est un espace de nom,  .Resources est une classe et Koala une propriété statique
-        # les fichiers associée:
+        # TestFrm.Properties est un espace de nom, .Resources est un nom de classe et Koala une propriété statique
+        # les fichiers associée :
         #  Projet\Frm\Properties\Resources.Designer.cs
         #  Projet\Frm\Properties\Resources.resx
        $nl='{0}= $PropertiesResources["{1}"]' -F $Matches.Object,$Matches.Key
@@ -911,9 +906,6 @@ function Test-PSScript {
 # .ExternalHelp ConvertForm-Help.xml           
   [CmdletBinding()] 
     [OutputType([System.String])] 
- #Valide la syntaxe d'un fichier powershell (ps1,psm1,psd1)
- #From http://blogs.microsoft.co.il/blogs/scriptfanatic/archive/2009/09/07/parsing-powershell-scripts.aspx 
- #$FilePath contient des noms de fichier littéraux
    param(                                
       [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]  
       [ValidateNotNullOrEmpty()]  
@@ -966,7 +958,7 @@ function Test-PSScript {
 
 Function OnRemoveConvertForm {
   Remove-Module Transform
-}#OnRemovePsIonicZip
+}#OnRemoveConvertForm
  
 $MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = { OnRemoveConvertForm }
 Export-ModuleMember -Function Convert-Form,Test-PSScript 

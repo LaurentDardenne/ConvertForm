@@ -24,13 +24,13 @@ Si votre projet contient plusieurs Formulaires, vous devrez exécuter ce script 
 Si dans Visual Studio vous déclarez des événements spécifiques pour chaque composant, ce script construira une fonction pour chacun de ces événements. Le code C# contenu dans le corps de la méthode n'est pas converti.  
 
 L'usage de certains composants graphique nécessite le modèle de thread STA, celui-ci peut être modifié à l'aide du paramètre -STA de Powershell.exe.</Description>
-        <Notes>https://convertform.codeplex.com/</Notes>
+        <Notes />
         <ReturnType>System.IO.FileInfo</ReturnType>
         <ReturnTypeDescription>Si le switch -Passthru est précisé, sinon ne renvoi aucune donnée. </ReturnTypeDescription>
       </GeneralHelp>
       <Syntax>
-        <string>Convert-Form [-Path] &lt;String&gt; [[-Destination] &lt;PSObject&gt;] [[-DestinationLiteral] &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-noLoadAssemblies] [-noShowDialog] [-Force] [-HideConsole] [-asFunction] [-PassThru]</string>
-        <string>Convert-Form [-LiteralPath] &lt;String&gt; [[-Destination] &lt;PSObject&gt;] [[-DestinationLiteral] &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-noLoadAssemblies] [-noShowDialog] [-Force] [-HideConsole] [-asFunction] [-PassThru]</string>
+        <string>Convert-Form [-Path] &lt;String&gt; [[-Destination] &lt;PSObject&gt;] [[-DestinationLiteral] &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-Force] [-HideConsole] [-asFunction] [-Secondary] [-Passthru]</string>
+        <string>Convert-Form [-LiteralPath] &lt;String&gt; [[-Destination] &lt;PSObject&gt;] [[-DestinationLiteral] &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-Force] [-HideConsole] [-asFunction] [-Secondary] [-Passthru]</string>
       </Syntax>
       <Parameters>
         <ParameterDescription>
@@ -50,6 +50,7 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ValidateNotNullOrEmptyAttribute</string>
           </Attributes>
           <Aliases />
+          <Description>Spécifie le chemin d’accès à un élément. Les caractères génériques sont autorisés.</Description>
           <Globbing>true</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -68,6 +69,8 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ParameterAttribute</string>
           </Attributes>
           <Aliases />
+          <Description>Spécifie le chemin d’accès du répertoire contenant le script généré. Les caractères génériques sont autorisés.
+Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
           <Globbing>true</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -86,6 +89,8 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ParameterAttribute</string>
           </Attributes>
           <Aliases />
+          <Description>Spécifie le chemin d’accès du répertoire contenant le script généré. Contrairement à Destination, la valeur de DestinationLiteral est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.
+Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -105,42 +110,7 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ParameterAttribute</string>
           </Attributes>
           <Aliases />
-          <Globbing>false</Globbing>
-        </ParameterDescription>
-        <ParameterDescription>
-          <Name>noLoadAssemblies</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
-          <Attributes>
-            <string>System.Management.Automation.ParameterAttribute</string>
-            <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
-          </Attributes>
-          <Aliases />
-          <Globbing>false</Globbing>
-        </ParameterDescription>
-        <ParameterDescription>
-          <Name>noShowDialog</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
-          <Attributes>
-            <string>System.Management.Automation.ParameterAttribute</string>
-            <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
-          </Attributes>
-          <Aliases />
+          <Description>Consulter l'aide du provider FileSystem, section PARAMÈTRES DYNAMIQUES : Get-Help FileSystem</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -159,6 +129,7 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
+          <Description>La présence de ce paramètre évite une demande de confirmation si le fichier cible .ps1 existe déjà.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -177,10 +148,7 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>Problème potentiel: la form principale masque la console, la fermeture de la seconde fenêtre réaffichera la console
-  If ( $HideConsole -and $noLoadAssemblies )
-  { Write-Warning $ConvertFormMsgs.ParameterHideConsoleNotNecessary } 
-</Description>
+          <Description>Masque la console lors de l'appel à ShowDialog() du formulaire principal.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -199,24 +167,8 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
-          <Globbing>false</Globbing>
-        </ParameterDescription>
-        <ParameterDescription>
-          <Name>PassThru</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
-          <Attributes>
-            <string>System.Management.Automation.ParameterAttribute</string>
-            <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
-          </Attributes>
-          <Aliases />
+          <Description>Le code du script généré est inséré dans une fonction.
+Par défaut sont nom est 'GeneratePrimaryForm', si le paramètre -Secondary est précisé, alors le nom de la fonction est 'GenerateSecondaryForm'.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -239,6 +191,47 @@ L'usage de certains composants graphique nécessite le modèle de thread STA, ce
           <Aliases>
             <string>PSPath</string>
           </Aliases>
+          <Description>Spécifie le chemin d’accès d'un élément. Contrairement à Path, la valeur de LiteralPath est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.</Description>
+          <Globbing>false</Globbing>
+        </ParameterDescription>
+        <ParameterDescription>
+          <Name>Secondary</Name>
+          <Type>SwitchParameter</Type>
+          <AcceptsArray>false</AcceptsArray>
+          <Mandatory>false</Mandatory>
+          <Dynamic>false</Dynamic>
+          <RemainingArgs>false</RemainingArgs>
+          <Pipeline>false</Pipeline>
+          <PipelinePropertyName>false</PipelinePropertyName>
+          <Positional>false</Positional>
+          <Position>named</Position>
+          <Attributes>
+            <string>System.Management.Automation.ParameterAttribute</string>
+            <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
+          </Attributes>
+          <Aliases />
+          <Description>La présence de ce paramètre génère un script d'un formulaire secondaire en évitant de dupliquer du code. 
+C'est à dire qu'il utilisera une partie du code généré dans le formulaire principal.
+Si le paramètre -AsFunction est précisé, alors le nom de la fonction sera 'GenerateSecondaryForm'.</Description>
+          <Globbing>false</Globbing>
+        </ParameterDescription>
+        <ParameterDescription>
+          <Name>Passthru</Name>
+          <Type>SwitchParameter</Type>
+          <AcceptsArray>false</AcceptsArray>
+          <Mandatory>false</Mandatory>
+          <Dynamic>false</Dynamic>
+          <RemainingArgs>false</RemainingArgs>
+          <Pipeline>false</Pipeline>
+          <PipelinePropertyName>false</PipelinePropertyName>
+          <Positional>false</Positional>
+          <Position>named</Position>
+          <Attributes>
+            <string>System.Management.Automation.ParameterAttribute</string>
+            <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
+          </Attributes>
+          <Aliases />
+          <Description>Emet l'objet fichier correspondant au script .ps1 généré.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
       </Parameters>
@@ -287,7 +280,7 @@ On ajoute également l'appel au script APiWindows.ps1. todo</Description>
         <RsatChecked>false</RsatChecked>
         <Ps2Checked>false</Ps2Checked>
         <Ps3Checked>false</Ps3Checked>
-        <Ps4Checked>false</Ps4Checked>
+        <Ps4Checked>true</Ps4Checked>
         <WinXpChecked>false</WinXpChecked>
         <WinVistaChecked>false</WinVistaChecked>
         <Win7Checked>false</Win7Checked>
@@ -347,6 +340,7 @@ On ajoute également l'appel au script APiWindows.ps1. todo</Description>
             <string>PSPath</string>
             <string>FullName</string>
           </Aliases>
+          <Description>Spécifie le chemin d’accès d'un élément. La valeur de FilePath est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
         <ParameterDescription>
@@ -365,6 +359,7 @@ On ajoute également l'appel au script APiWindows.ps1. todo</Description>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
+          <Description>Affiche un résultat sommaire des fichiers testés.</Description>
           <Globbing>false</Globbing>
         </ParameterDescription>
       </Parameters>

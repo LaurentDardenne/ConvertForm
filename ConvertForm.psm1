@@ -668,6 +668,11 @@ Function $FunctionName {
          if ($Ligne.StartsWith('this.')) 
          { $Ligne = $Ligne.replace('this.','$') }
       }
+      #Recherche this en tant que premier paramètre d'une méthode
+      #  $AddonFrm.toolTip1.SetToolTip(this, "Retrieve dependencies of a script")
+      # transformé en :
+      #  $toolTip1.SetToolTip($AddonFrm, "Retrieve dependencies of a script")
+      $Ligne = $Ligne -replace '^(\$.*?)\.(.*?\.SetToolTip)\(this,(.*)$',"`$$`$2(`$$FormName,`$3"
         
         #Remplace le token d'appel d'un constructeur d'instance des composants graphiques. 
         # this.PanelMainFill = new System.Windows.Forms.Panel();

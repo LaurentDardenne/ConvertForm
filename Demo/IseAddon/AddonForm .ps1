@@ -35,7 +35,7 @@ function Get-ScriptDirectory
 
 $script:ScriptPath = Get-ScriptDirectory
 ."$script:ScriptPath\SelectModuleFrm.ps1"
-$script:Functions = $script:Dependencies = $script:lstbxModules = $script:lstbxErrors = $null
+$script:Functions = $script:Dependencies = $null
 
 function Show-MessageBox([string] $Message,[string] $Titre="",  [String] $IconType="Information",[String] $BtnType="Ok")
 { 
@@ -47,12 +47,78 @@ function Show-MessageBox([string] $Message,[string] $Titre="",  [String] $IconTy
    Throw "Assurez-vous que l'assembly [System.Windows.Forms] est bien chargé."       
   }
 }
+function Get-Token {
+ #Renvoi tous les tokens de type Command
+ #Renseigne la collection des scripts chargés dans le code analysé  
+ param($Tokens)  
+ 
+  function AddScriptDependency
+  {
+      #L'analyse des opérateur . et & nécessite de connaitre le token suivant 
+      #On récupère le texte du token suivant
+      #On poursuit la boucle avec le suivant : $Foreach.Current +1 
+    [void]($Foreach.MoveNext())
+    $TK=$Foreach.Current
+     #Le suivant est une imbrication
+    if ($Tk -is [System.Management.Automation.Language.StringExpandableToken]) 
+    {
+     if ($Tk.NestedTokens -ne $null)
+     {
+       Get-Token $Tk.NestedTokens
+       continue
+     }
+    }
+    if ( @('Identifier','LCurly','LParen','MemberName','Variable','Dollarparen','LineContinuation','Dot') -notContains $TK.Kind ) #Function ou Scriptblock ou regroupement
+    {
+      [void]$script:ScriptDependencies.Add($TK.Text)
+      [void]$script:lstbxModules.Items.Add("Dépend du script : $($TK.Text)")
+      Continue
+    }
+  }#AddScriptDependency       
+ 
+ foreach ($Token in $Tokens)
+ {
+   Write-debug "Token=$($Token.Text)"
+   #Note : TokenFlags est un champ de bit
+   if ($Token -is [System.Management.Automation.Language.StringExpandableToken])
+   {Get-Token $Token.NestedTokens}
+   elseif ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::CommandName)
+   {
+     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::KeyWord)
+     {continue}
+     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::BinaryOperator)
+     {continue}
+     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::BinaryOperator)
+     {continue}
+     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::UnaryOperator)
+     {continue}
+     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::CaseSensitiveOperator)
+     {continue}
+     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::AssignmentOperator)
+     {continue}
+     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::PrefixOrPostfixOperator)
+     {continue}
+     if ($Token.Kind -eq 'Generic')
+     { Write-output $Token.Value }
+     elseif ($Token.Kind -eq 'Identifier') #C'est un alias
+     {Write-output $Token.Text}
+     elseif ($Token.Kind -eq 'Dot') #SpecialOperator
+     { AddScriptDependency } 
+     else
+     { Write-Error "Type de token $($Token.Kind) à implémenter '$Token'"}
+   }
+   elseif (($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::SpecialOperator) -and ($Token.Text -match '&|\.'))
+   { AddScriptDependency }
+ }
+}#Get-Token
 
 function GetDependencies{
- #todo : scripts (opérateur & et .), Manifeste de module et Import-Module 
+ #todo :  Manifeste de module et Import-Module 
  #Les commandes des modules imbriqués n'ayant pas de répertoire dédié( cf. $PSModulePath) ne sont pas 
  #listées par Get-command, elles sont donc considérées comme introuvables.
  #Dans ce cas $PSModuleAutoLoadingPreference ne peut pas retrouver le module. 
+ #La recherche de dépendances sur les variables de module n'est pas implémentée
+
  param($Code)	
 
   function AddError {
@@ -65,6 +131,7 @@ function GetDependencies{
     }        
   }#AddError
  	
+  $script:ScriptDependencies = New-Object System.Collections.ArrayList
   $tokenAst = $parseErrorsAst = $null
   $scriptBlockAst = [System.Management.Automation.Language.Parser]::ParseInput($Code, [ref]$tokenAst, [ref]$parseErrorsAst)
   if ($parseErrorsAst.Count -ne 0)
@@ -81,23 +148,13 @@ function GetDependencies{
     
     $Result=New-Object System.Collections.ArrayList
     $UnknownCommands=New-Object System.Collections.ArrayList
-    Write-Debug "gcm all $(get-date)"
      #Recence toutes les commandes
     $AllCommands=@(Get-Command -All -EA Stop)
-    Write-Debug "fin gcm all Analyse $(get-date)"
     
      #Recherche dans le code toutes les commandes
      #On ne peut savoir si une commande référencera tjr le même module
      #ou si une fonction(proxy) masquera un cmdlet lors de l'exécution du code. 
-    $tokenAst|
-      Foreach-object {
-       $Token=if ($_ -is [System.Management.Automation.Language.StringExpandableToken])
-           {$_.NestedTokens}
-           else
-           {$_}
-       if ($Token.TokenFlags -eq 'CommandName') 
-       {$Token.Value}
-      }|
+     Get-Token $TokenAst|
       Select -unique|
       Foreach-Object{
         $CommandName=$_
@@ -110,16 +167,14 @@ function GetDependencies{
              if ($CommandName.Contains('\') )
              {
                 #En V3 gcm retourne une seule fonction, celle qui sera utilisée par défaut par PS
-               $Command=Get-Command $CommandName -EA Stop
+               $Command=Get-Command $CommandName -EA Stop  
                $CommandName=($CommandName -split '\\')[1]
              }  
              else
              {
-               Write-Debug "Commande ambïgue"
                 #Recherche/sélection s'il y a ambiguité
                   #Bug sur GCM -Name -All ??
                $Commands=@($AllCommands|Where Name -eq $CommandName)
-               Write-Debug "Commands.Count= $($Commands.Count)"
                if ($Commands.Count -gt 1) 
                {
                   #La première commande de la liste n'est pas celle qui sera utilisée par défaut par PS
@@ -146,9 +201,9 @@ function GetDependencies{
              if ( ![string]::IsNullOrEmpty($ModuleName) -and ($script:RuntimeModules -NotContains $ModuleName) )
              { 
                 $ModuleReference="@{{ModuleName=`"{0}`";ModuleVersion='{1}'}}" -F $ModuleName,$Version
+                [void]$script:lstbxModules.Items.Add("'$CommandName' dépend du module : $ModuleName -> $($Command.Module.ModuleBase)")
                 if (!$Result.Contains($ModuleReference))
                 {
-                  [void]$script:lstbxModules.Items.Add("'$CommandName' dépend du module : $ModuleName -> $($Command.Module.ModuleBase)")
                   [void]$Result.Add($ModuleReference) 
                   $script:lstbxModules.Refresh()
                 }
@@ -296,11 +351,23 @@ $(
   if ($script:Dependencies.Count -gt 0)
   {"#Requires -Modules $script:Dependencies"}
 )
+
+$(
+ $OFS=''
+ "#Scripts required`r`n"
+ foreach ($Script in $script:ScriptDependencies)
+ {  "# $Script`r`n" }
+)
 `r`n
 "@
-  $psISE.CurrentFile.Editor.SetCaretPosition(1,1)
-  $psISE.CurrentFile.Editor.InsertText($Text)
-  $AddonFrm.Close()
+ if ($PSDebugContext)
+ {[void](Show-MessageBox $Text "New requirements" "Info") }
+ else
+ {
+   $psISE.CurrentFile.Editor.SetCaretPosition(1,1)
+   $psISE.CurrentFile.Editor.InsertText($Text)
+ }
+ $AddonFrm.Close()
 }
 $btnInsert.Add_Click( { OnClick_btnInsert } )
 

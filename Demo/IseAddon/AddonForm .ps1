@@ -35,7 +35,7 @@ function Get-ScriptDirectory
 
 $script:ScriptPath = Get-ScriptDirectory
 ."$script:ScriptPath\SelectModuleFrm.ps1"
-$script:Functions = $script:Dependencies = $null
+$script:Dependencies = $null
 
 function Show-MessageBox([string] $Message,[string] $Titre="",  [String] $IconType="Information",[String] $BtnType="Ok")
 { 
@@ -47,70 +47,56 @@ function Show-MessageBox([string] $Message,[string] $Titre="",  [String] $IconTy
    Throw "Assurez-vous que l'assembly [System.Windows.Forms] est bien chargé."       
   }
 }
-function Get-Token {
- #Renvoi tous les tokens de type Command
- #Renseigne la collection des scripts chargés dans le code analysé  
- param($Tokens)  
- 
-  function AddScriptDependency
-  {
-      #L'analyse des opérateur . et & nécessite de connaitre le token suivant 
-      #On récupère le texte du token suivant
-      #On poursuit la boucle avec le suivant : $Foreach.Current +1 
-    [void]($Foreach.MoveNext())
-    $TK=$Foreach.Current
-     #Le suivant est une imbrication
-    if ($Tk -is [System.Management.Automation.Language.StringExpandableToken]) 
+
+function Initialize-AstCommandGroup {
+ param($Ast)
+  
+  function AddScriptDependencies {
+   param(
+      [parameter(ValueFromPipeline=$True )]
+   [psobject]$CommandElement
+  )
+   process {
+    if ( ($CommandElement -isnot [System.Management.Automation.Language.VariableExpressionAst]) -and 
+         ($CommandElement -isnot [System.Management.Automation.Language.ScriptBlockExpressionAst]) )
     {
-     if ($Tk.NestedTokens -ne $null)
-     {
-       Get-Token $Tk.NestedTokens
-       continue
-     }
+       $Text=$CommandElement.Parent.Extent.Text 
+       [void]$script:ScriptDependencies.Add($Text)
+       [void]$script:lstbxModules.Items.Add("Dépend du script : $Text")
     }
-    if ( @('Identifier','LCurly','LParen','MemberName','Variable','Dollarparen','LineContinuation','Dot') -notContains $TK.Kind ) #Function ou Scriptblock ou regroupement
-    {
-      [void]$script:ScriptDependencies.Add($TK.Text)
-      [void]$script:lstbxModules.Items.Add("Dépend du script : $($TK.Text)")
-      Continue
-    }
-  }#AddScriptDependency       
- 
- foreach ($Token in $Tokens)
- {
-   Write-debug "Token=$($Token.Text)"
-   #Note : TokenFlags est un champ de bit
-   if ($Token -is [System.Management.Automation.Language.StringExpandableToken])
-   {Get-Token $Token.NestedTokens}
-   elseif ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::CommandName)
-   {
-     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::KeyWord)
-     {continue}
-     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::BinaryOperator)
-     {continue}
-     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::BinaryOperator)
-     {continue}
-     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::UnaryOperator)
-     {continue}
-     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::CaseSensitiveOperator)
-     {continue}
-     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::AssignmentOperator)
-     {continue}
-     if ($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::PrefixOrPostfixOperator)
-     {continue}
-     if ($Token.Kind -eq 'Generic')
-     { Write-output $Token.Value }
-     elseif ($Token.Kind -eq 'Identifier') #C'est un alias
-     {Write-output $Token.Text}
-     elseif ($Token.Kind -eq 'Dot') #SpecialOperator
-     { AddScriptDependency } 
-     else
-     { Write-Error "Type de token $($Token.Kind) à implémenter '$Token'"}
-   }
-   elseif (($Token.TokenFlags -band [System.Management.Automation.Language.TokenFlags]::SpecialOperator) -and ($Token.Text -match '&|\.'))
-   { AddScriptDependency }
- }
-}#Get-Token
+   }             
+  }#AddScriptDependencies
+  
+   #Recherche les fonctions déclarées dans le code de l'onglet ISE courant
+  $script:Functions=$Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true) |
+                      Select-Object -ExpandProperty Name
+  
+  $LanguageCommandAst=$Ast.FindAll({ $args[0] -is [System.Management.Automation.Language.CommandAst]}, $true) |
+    Group-Object InvocationOperator -AsHashTable -AsString 
+
+  if ($LanguageCommandAst.Contains('Dot'))
+  { 
+    $LanguageCommandAst.Dot.Getenumerator()|
+      AddScriptDependencies -CommandElement {$_.CommandElements[0]}
+  }
+  if ($LanguageCommandAst.Contains('Ampersand'))
+  { 
+     $LanguageCommandAst.Ampersand.Getenumerator()|
+      AddScriptDependencies -CommandElement {$_.CommandElements[0]}
+  }
+  $script:CommandAst=$null
+  if ($LanguageCommandAst.Contains('Unknown'))
+  { 
+    $script:CommandAst=$LanguageCommandAst.Unknown.Getenumerator()|
+                        Foreach {
+                         $_.CommandElements[0].Value
+                        }|
+                        Select -unique|
+                        Where { $_ -NotIn $Functions}
+  }
+} #Initialize-AstCommandGroup
+
+
 
 function GetDependencies{
  #todo :  Manifeste de module et Import-Module 
@@ -133,71 +119,60 @@ function GetDependencies{
  	
   $script:ScriptDependencies = New-Object System.Collections.ArrayList
   $tokenAst = $parseErrorsAst = $null
-  $scriptBlockAst = [System.Management.Automation.Language.Parser]::ParseInput($Code, [ref]$tokenAst, [ref]$parseErrorsAst)
+  $CodeISEAst = [System.Management.Automation.Language.Parser]::ParseInput($Code, [ref]$tokenAst, [ref]$parseErrorsAst)
   if ($parseErrorsAst.Count -ne 0)
   { 
     $parseErrorsAst|Foreach {write-host $_}
-    [void](Show-MessageBox "The script contains syntax errors" "Parsing" "Error") 
+    [void](Show-MessageBox "The script contains syntax errors." "Parsing" "Error") 
+    return
+  }
+  elseif ($CodeISEAst.EndBlock.Statements.Count -eq 0)
+  {
+    [void](Show-MessageBox "The editor do not contains code to analyze." "Parsing" "Error") 
     return
   }
   else
   {
-     #Recherche les fonctions déclarées dans le code de l'onglet ISE courant
-    $script:Functions=$scriptBlockAst.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true) |
-                        Select-Object -ExpandProperty Name
-    
+    Initialize-AstCommandGroup $CodeISEAst
     $Result=New-Object System.Collections.ArrayList
     $UnknownCommands=New-Object System.Collections.ArrayList
      #Recence toutes les commandes
-    $AllCommands=@(Get-Command -All -EA Stop)
+    $AllCommands=Get-Command -All|Group-Object Name -AsHashTable
     
      #Recherche dans le code toutes les commandes
      #On ne peut savoir si une commande référencera tjr le même module
      #ou si une fonction(proxy) masquera un cmdlet lors de l'exécution du code. 
-     Get-Token $TokenAst|
-      Select -unique|
+     $script:CommandAst|
       Foreach-Object{
         $CommandName=$_
         Write-Debug "Analyse $CommandName $(get-date)"
         #On filtre les noms de fonction du script en cours d'analyse
-        if ( (![string]::IsNullOrEmpty($CommandName)) -and ($script:Functions -NotContains $CommandName))
-        {
-           try {
-               #Si le nom est complet dans ce cas il n'y a pas d'ambiguité
-             if ($CommandName.Contains('\') )
+        try {
+           #Si le nom est complet dans ce cas il n'y a pas d'ambiguité
+         if ($CommandName.Contains('\') )
+         {
+            #En V3 gcm retourne une seule fonction, celle qui sera utilisée par défaut par PS
+           $Command=Get-Command $CommandName -EA Stop  
+           $CommandName=($CommandName -split '\\')[1]
+         }  
+         else
+         {
+           if ($AllCommands.Contains($CommandName))
+           {
+              #Recherche/sélection s'il y a ambiguité
+             $Commands=@($AllCommands.Item($CommandName))
+             if ($Commands.Count -gt 1) 
              {
-                #En V3 gcm retourne une seule fonction, celle qui sera utilisée par défaut par PS
-               $Command=Get-Command $CommandName -EA Stop  
-               $CommandName=($CommandName -split '\\')[1]
-             }  
-             else
-             {
-                #Recherche/sélection s'il y a ambiguité
-                  #Bug sur GCM -Name -All ??
-               $Commands=@($AllCommands|Where Name -eq $CommandName)
-               if ($Commands.Count -gt 1) 
-               {
-                  #La première commande de la liste n'est pas celle qui sera utilisée par défaut par PS
-                 $Command=SelectModuleForm $AddonFrm $script:ScriptPath "Command : $CommandName" $Commands
-                 if ($Command -eq $null )
-                 { return }
-               }
-               elseif ($Commands.Count -eq 1)  
-               { $Command=$Commands[0] }
-               elseif ($Commands.Count -eq 0) 
-               { 
-                  #Si la commande existe dans les modules core ce n'est pas une erreur
-                 $Command=Get-Command $CommandName -EA Stop
-                 if ($script:RuntimeModules -NotContains $Command.ModuleName) 
-                 { 
-                   AddError $CommandName
-                   return #suivant 
-                 }
-               }
+                #La première commande de la liste n'est pas celle qui sera utilisée par défaut par PS
+               $Command=SelectModuleForm $AddonFrm $script:ScriptPath "Command : $CommandName" $Commands
+               if ($Command -eq $null )
+               { return }
              }
+             else  
+             { $Command=$Commands[0] }
+
              $ModuleName=$Command.ModuleName
              $Version=$Command.Module.Version
-
              if ( ![string]::IsNullOrEmpty($ModuleName) -and ($script:RuntimeModules -NotContains $ModuleName) )
              { 
                 $ModuleReference="@{{ModuleName=`"{0}`";ModuleVersion='{1}'}}" -F $ModuleName,$Version
@@ -208,11 +183,14 @@ function GetDependencies{
                   $script:lstbxModules.Refresh()
                 }
              }
-           } 
-           catch {
-               AddError $CommandName "$_"
            }
-        }#if
+           else
+           { AddError $CommandName }
+         }
+        } 
+        catch {
+           AddError $CommandName "$_"
+        }
       }#foreach
    ,$Result  
   } #else

@@ -1,3 +1,4 @@
+
 #PowerShell Form Converter
 
 #todo : Ajout try /finally pour
@@ -163,8 +164,8 @@ function Convert-Form {
   $FileName=$SourcePathInfo.GetFileName()
   
    #Le PSPath doit exister, ne pas être un répertoire, ne pas contenir de globbing et être sur le FileSystem
-   #On doit lit un fichier.
-   #On précise le raison de de l'erreur
+   #On doit lire un fichier.
+   #On précise la raison de l'erreur
   if (!$SourcePathInfo.isFileSystemItemFound()) 
   {
     if (!$SourcePathInfo.isDriveExist) 
@@ -196,7 +197,7 @@ function Convert-Form {
     
     $FileName=$DestinationPathInfo.GetFileName()
 
-    #Le PSPath doit être valide, ne pas contenir de globbing ( sauf si literalPath) et être sur le FileSystem
+    #Le PSPath doit être valide, ne pas contenir de globbing (sauf si literalPath) et être sur le FileSystem
     #Le PSPath doit exister et pointer sur un répertoire :  { md C:\temp\test00 -Force}
     #On précise la raison de l'erreur
     if (!$DestinationPathInfo.IsaValidNameForTheFileSystem()) 

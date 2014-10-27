@@ -1,38 +1,26 @@
-﻿#Peut être modifié selon vos besoins.
+﻿#Can be changed as needed.
 
 Function Add-Header{
- #Crée l'entête du script
+ #Creates the header script
  param( 
-  [String] $NomScript,
+  [String] $ScriptName,
   $InvocationLine,
-  [string] $NomSource 
+  [string] $SourceName 
 )
- $Date="{0:d}" -f [DateTime]::Today #Format JJ/MM/AAAA
+ $Date="{0:d}" -f [DateTime]::Today 
  $Line ="#" * 80
- 
-  #Ces info de logs devrait être placés en fin de fichier sources.
-  # Doc SVN: http://svnbook.red-bean.com/en/1.1/ch07s02.html#svn-ch-7-sect-2.3.4
 @"
 $Line 
 `#
-`#  Nom     : $NomScript  
+`#  Name    : $ScriptName  
 `#  Version : 0.1
-`#  Auteur  :
-`#  Date    : le $Date
+`#  Author  :
+`#  Date    : $Date
 `#
-`#  Généré sous PowerShell V$($PSVersionTable.PSVersion)
-`#  Appel   : $InvocationLine
-`#  Source  : $NomSource
-<#
-Historique :
-(Soit substitution CVS)
-`$Log`$
-(soit substitution SVN)
-`$LastChangedDate`$
-`$Rev`$
-#>
+`#  Generated with PowerShell V$($PSVersionTable.PSVersion)
+`#  Invocation Line   : $InvocationLine
+`#  Source            : $SourceName
 $Line
-
 "@
 }
 

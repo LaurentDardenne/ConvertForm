@@ -6,9 +6,13 @@
 #Note:
 #  File I/O functions in the Windows API convert "/" to "\" as part of converting the name to an NT-style name, 
 # except when using the "\\?\" prefix as detailed in the following sections.  (http://msdn.microsoft.com/en-us/library/aa365247%28VS.85%29.aspx)
+#
+#\\.\PHYSICALDRIVE1 -> false
+#\\?\C:\temp -> false
 
  param(  
   [string] $Path,
+  
    #Valide les chemins PS : 
    # 'FileSystem::\\localhost\c$\temp' 
    # 'Microsoft.PowerShell.Core\FileSystem::\\localhost\c$\temp'
@@ -38,11 +42,12 @@
 (Get-Item function:Test-UNCPath).Description='Test un chemin UNC IPv4'
 
 Function New-PSPathInfo{
-#Tente de résoudre un nom de chemin Powershell
+#Crée un objet détaillant un nom de chemin Powershell
  [CmdletBinding(DefaultParameterSetName = "Path")]          
  param(
     [Parameter(Mandatory=$true,ValueFromPipeline=$true,ParameterSetName="Path")]
    [string]$Path,
+   
     [Parameter(Mandatory=$true,ValueFromPipeline=$true, ParameterSetName="LiteralPath")]
    [String]$LiteralPath
  )
@@ -74,7 +79,7 @@ Function New-PSPathInfo{
               
                #Mémorise le type d'interprétation du path
                #Par exemple pour 'C:\Temp\File[1-5]' sa résolution avec -Path échoue et avec -LiteralPath elle réussie.
-               #Les objets seront différentes.
+               #Les objets seront différents.
                #Par exemple en utilisant -Path la propriété Win32PathName ne peut être renseigné, 
                #car les caractères '[1-5]' sont interprétés comme une demande de globbing.    
               asLiteral=$asLiteral
@@ -89,7 +94,7 @@ Function New-PSPathInfo{
                #Attention, parmis les les fichiers trouvés, on peut trouver des chemins devant 
                #être utilisés avec -LiteralPath.
                #*.* ne renvoit que les entrées contenant un point, pour tout sélectionner utiliser * 
-               #Les fichiers ayant l'attribut 'hidden' ne sont pas renvoyés.   
+               #Les fichiers ayant l'attribut 'hidden' seront absent de cette liste .   
               ResolvedPSFiles=@();
                
                #Texte de la dernière exception rencontrée (exceptions gérées uniquement)
@@ -104,7 +109,7 @@ Function New-PSPathInfo{
                #
                #Peut être vide selon le provider pointé et la syntaxe utilisée: 
                #'Alias:','FeedStore:','Function:','PscxSettings:\'
-               #ex: cd function: ; $pathHelper.GetUnresolvedProviderPathFromPSPath('.') -> renvoi une chaîne vide. 
+               #ex: cd function: ; $pathHelper.GetUnresolvedProviderPathFromPSPath('.') -> renvoi une chaîne vide sous PS v2. 
                #Ici le provider ne gère pas une hiérarchie d'objets (doit dériver de [System.Management.Automation.Provider.NavigationCmdletProvider])
               ResolvedPSPath=$Null;
                
@@ -217,10 +222,10 @@ Function New-PSPathInfo{
        #Si le path est ProviderQualified alors DriveInfo est à $null
        #Si la localisation est 'HKLM:\', alors pour le nom de chemin '..', l'appel renvoie HKEY_LOCAL_MACHINE\ qui est la racine courante, 
        #mais la racine courante du provider registry n'est pas un nom de drive PS, c'est ici le nom de la ruche.
-       #Si la localisation est 'C:\', alors pour le nom de chemin '..', l'appel renvoie C:\qui est la racine courante, pour le filesystem elle contient le nom du drive PS, 
+       #Si la localisation est 'C:\', alors pour le nom de chemin '..', l'appel renvoie C:\ qui est la racine courante, pour le filesystem elle contient le nom du drive PS, 
        #car celui-ci existe en dehors de Powershell.
        #
-       #Le nom de path '...' est pris en compte, mais selon les cmdlet il est considéré comme un chemin relatif :-/
+       #Le nom de path '...' est pris en compte, mais selon les cmdlets il est considéré comme un chemin relatif :-/
        #Les chemins UNC débutant par plus de 2 '\' sont pris en compte, 
        # et fonctionne avec des cmdlets de PS v2, mais déclenchera des exceptions avec ces mêmes cmdlets sous la V3.  
       $ursvPath=$pathHelper.GetUnresolvedProviderPathFromPSPath($CurrentPath,[ref]$ProviderInfo,[ref]$DriveInfo)
@@ -348,13 +353,16 @@ Function New-PSPathInfo{
            $provider=$null
             #renvoi le nom du provider et le fichier (-Literal) ou les fichiers en cas de globbing (-Path)
            if ($isLiteral)
-           { $Infos.ResolvedPSFiles=@($pathHelper.GetResolvedProviderPathFromPSPath(([Management.Automation.WildcardPattern]::Escape($Infos.ResolvedPSPath)),[ref]$provider)) }
+           { 
+             #Les fichiers ayant l'attribut 'hidden' ne sont pas renvoyés.
+             $Infos.ResolvedPSFiles=@($pathHelper.GetResolvedProviderPathFromPSPath(([Management.Automation.WildcardPattern]::Escape($Infos.ResolvedPSPath)),[ref]$provider)) 
+           }
            else 
            { $Infos.ResolvedPSFiles=@($pathHelper.GetResolvedProviderPathFromPSPath($Infos.ResolvedPSPath,[ref]$provider)) }
            Write-Debug ("ResolvedPSFiles.Count={0}" -F $Infos.ResolvedPSFiles.Count) #<%REMOVE%> 
          } catch [System.Management.Automation.PSInvalidOperationException] {
              Write-Debug  "Exception GetResolvedProviderPathFromPSPath : $($_.Exception.GetType().Name)" #<%REMOVE%>
-             #Sur la registry, '~' déclenche cette exception, car la propriété Home n'est pas renseigné.
+             #Sur la registry, '~' déclenche cette exception, car par défaut sa propriété Home n'est pas renseignée.
          }
        }
      }  
@@ -427,6 +435,7 @@ Function New-PSPathInfo{
        { 
          try {
               #La validation doit se faire à l'aide du provider ciblé
+              #$pathHelper.isValid('t*') est différent si la localisation courante est sur le filesystem ou la registry
              Push-Location $env:windir
              $Infos.isPSValid=$pathHelper.isValid($Infos.ResolvedPSPath)
          } catch [System.Management.Automation.ProviderInvocationException]  {
@@ -508,7 +517,7 @@ function Add-FileSystemValidationMember {
          If (-not $result) { Write-Debug "Le répertoire n'existe pas : $($this.Win32PathName)" } #<%REMOVE%>
          $result     
       }  -Passthru|  
-        #Le nom chemin est-il un nom valide pouvant être crée sur le FileSystem ?
+        #Le nom de chemin est-il un nom valide pouvant être crée sur le FileSystem ?
       Add-Member -Membertype Scriptmethod -Name IsCandidateForCreation {
           # Pour créer un répertoire on doit savoir s'il :
           #  est valide (ne pas contenir de joker, ni de caractères interdits),
@@ -535,7 +544,7 @@ function Add-FileSystemValidationMember {
       } -Passthru |
         #Le nom de chemin valide existant et comportant des jokers, renvoie-t-il au moins un fichier/répertoire ?
       Add-Member -Membertype Scriptmethod -Name isFileSystemItemContainsResolvedFiles {
-         $result=$this.isaValidFileSystemPath -and $this.isItemExist -and $this.isWildcard -and $this.ResolvedPSFiles.Count -gt 0
+         $result=$this.isaValidFileSystemPath() -and $this.isItemExist -and $this.isWildcard -and $this.ResolvedPSFiles.Count -gt 0
          if (-not $result) { Write-Debug "La résolution du chemin valide ne renvoi pas de fichiers/répertoire : $($this.GetFileName())" } #<%REMOVE%>
          $result          
       } -Passthru   

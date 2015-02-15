@@ -6,6 +6,16 @@
 # $WinForm.Dispose()
 # Show-Window
 
+#todo bug 
+#Add ImageList :
+# supprimer la ligne cs suivante  
+#  System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmTreeView));
+# et ne pas la convertir en  
+#  System.ComponentModel.ComponentResourceManager resources = New-Object System.ComponentModel.ComponentResourceManager(typeof(FrmTreeView))
+# 
+# todo Test avec 2 ou plus de fichier/composant ressources . Quels noms ? celui de typeof ?
+# todo construction message event pas implémenté
+
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
  
  #On charge les méthodes de construction et d'analyse du fichier C#

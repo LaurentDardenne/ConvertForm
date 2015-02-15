@@ -48,7 +48,7 @@ Function Add-EventComponent([String] $ComponentName, [String] $EventName)
   $OnEvent_Name="On{0}_{1}" -f ($EventName,$ComponentName)
   $Fonction ="`r`nfunction $OnEvent_Name {{`r`n`t{0}`r`n}}`r`n" -f ($UnderConstruction)
    #On double le caractère '{' afin de pouvoir l'afficher
-  $EvtHdl= "`${0}.Add_{1}( {{ {2} }} )`r`n" -f ($ComponentName, $EventName, $OnEvent_Name)
+  $EvtHdl= "{0}.Add_{1}( {{ {2} }} )`r`n" -f ($ComponentName, $EventName, $OnEvent_Name)
 # Here-string    
 @"
 $Fonction

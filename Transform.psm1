@@ -40,15 +40,16 @@ Function Add-LoadAssembly{
 Function Add-EventComponent([String] $ComponentName, [String] $EventName)
 { #Crée et ajoute un événement d'un composant.
   #Par défaut le scriptbloc généré affiche un message d'information
-
-  $UnderConstruction = "[void][System.Windows.Forms.MessageBox]::Show(`"$($TransformMsgs.AddEventComponent)`")"
+  
+  $Message=$ExecutionContext.InvokeCommand.ExpandString($TransformMsgs.AddEventComponent)
+  $UnderConstruction = "[void][System.Windows.Forms.MessageBox]::Show(`"$Message`")"
    #La syntaxe d'ajout d'un délégué est : Add_NomEvénément 
    # où le nom de l'événement est celui du SDK .NET
    #On construit le nom de la fonction appellée par le gestionnaire d'événement
   $OnEvent_Name="On{0}_{1}" -f ($EventName,$ComponentName)
   $Fonction ="`r`nfunction $OnEvent_Name {{`r`n`t{0}`r`n}}`r`n" -f ($UnderConstruction)
    #On double le caractère '{' afin de pouvoir l'afficher
-  $EvtHdl= "{0}.Add_{1}( {{ {2} }} )`r`n" -f ($ComponentName, $EventName, $OnEvent_Name)
+  $EvtHdl= "`${0}.Add_{1}( {{ {2} }} )`r`n" -f ($ComponentName, $EventName, $OnEvent_Name)
 # Here-string    
 @"
 $Fonction

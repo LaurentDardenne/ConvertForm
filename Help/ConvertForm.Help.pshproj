@@ -1,19 +1,14 @@
-﻿<?xml version="1.0"?>
-<ModuleObject xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<?xml version="1.0"?>
+<ModuleObject xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" fVersion="1.1" type="Script" mclass="External" useSupports="false">
   <Name>ConvertForm</Name>
-  <ModuleType>Script</ModuleType>
   <Version>0.0</Version>
   <Description />
-  <ModuleClass>External</ModuleClass>
-  <ModulePath>G:\PS\ConvertForm\ConvertForm.psm1</ModulePath>
-  <UseSupports>false</UseSupports>
+  <HasManifest>false</HasManifest>
   <OverridePostCount>false</OverridePostCount>
   <FetchPostCount xsi:nil="true" />
   <Cmdlets>
-    <CmdletObject>
+    <CmdletObject verb="Convert" noun="Form">
       <Name>Convert-Form</Name>
-      <Verb>Convert</Verb>
-      <Noun>Form</Noun>
       <GeneralHelp>
         <Synopsis>Converti un fichier Winform (xxx.Designer.cs) en un script PowerShell.</Synopsis>
         <Description>Ce script permet de convertir un fichier CSharp contenant les déclarations d'une WinForm en un script PowerShell. 
@@ -26,38 +21,37 @@ Si dans Visual Studio vous déclarez des événements spécifiques pour chaque c
 L'usage de certains composants graphique nécessite le modèle de thread STA, celui-ci peut être modifié à l'aide du paramètre -STA de Powershell.exe. Dans ce cas lors de l'exécution du script généré un contrôle du modèle de thread sera effectué.
 
 La réussite de l'appel à Convert-Form générera au moins le fichier suivant :
- Form1.ps1 : script powershell de déclaration du formulaire. Le nom reprend une partie nom de fichier csharp 'xxx.Designer.cs'.
+ Form1.ps1 : script Powershell de déclaration du formulaire. Le nom reprend une partie nom de fichier CSharp 'xxx.Designer.cs'.
 
 Cet appel peut également générer les fichiers suivants :
  Form1Properties.resources      : Fichier de ressources des propriétés du projet Winform
  Form1Properties.resources.log  : fichier de log associé créé par le programme Resgen.exe
 
- Form1.resources                : Fichier de ressources sécifique à un formulaire
+ Form1.resources                : Fichier de ressources spécifique à un formulaire
  Form1.resources.log            : fichier de log associé créé par le programme Resgen.exe
 
 
 </Description>
         <Notes>Site web du projet ConvertForm : https://convertform.codeplex.com/
 </Notes>
+        <InputType />
+        <InputUrl />
+        <InputTypeDescription />
         <ReturnType>System.IO.FileInfo</ReturnType>
+        <ReturnUrl />
         <ReturnTypeDescription>Si le switch -Passthru est précisé, sinon ne renvoi aucune donnée. </ReturnTypeDescription>
       </GeneralHelp>
+      <ParamSets>
+        <CommandParameterSetInfo2 Name="Path" Params="Path Destination DestinationLiteral Encoding Force HideConsole asFunction Secondary Passthru Verbose Debug ErrorAction WarningAction ErrorVariable WarningVariable OutVariable OutBuffer PipelineVariable" />
+        <CommandParameterSetInfo2 Name="LiteralPath" Params="LiteralPath Destination DestinationLiteral Encoding Force HideConsole asFunction Secondary Passthru Verbose Debug ErrorAction WarningAction ErrorVariable WarningVariable OutVariable OutBuffer PipelineVariable" />
+      </ParamSets>
       <Syntax>
         <string>Convert-Form [-Path] &lt;String&gt; [[-Destination] &lt;PSObject&gt;] [[-DestinationLiteral] &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-Force] [-HideConsole] [-asFunction] [-Secondary] [-Passthru]</string>
         <string>Convert-Form [-LiteralPath] &lt;String&gt; [[-Destination] &lt;PSObject&gt;] [[-DestinationLiteral] &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-Force] [-HideConsole] [-asFunction] [-Secondary] [-Passthru]</string>
       </Syntax>
       <Parameters>
-        <ParameterDescription>
+        <ParameterDescription type="String" varLen="false" required="true" dynamic="false" pipeRemaining="false" pipe="true" pipeProp="false" isPos="true" pos="0" globbing="true">
           <Name>Path</Name>
-          <Type>String</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>true</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>true</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>true</Positional>
-          <Position>0</Position>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
             <string>System.Management.Automation.ParameterAttribute</string>
@@ -65,19 +59,10 @@ Cet appel peut également générer les fichiers suivants :
           </Attributes>
           <Aliases />
           <Description>Spécifie le chemin d’accès d'un fichier Designer.cs. Les caractères génériques sont autorisés.</Description>
-          <Globbing>true</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="PSObject" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="true" isPos="true" pos="1" globbing="true">
           <Name>Destination</Name>
-          <Type>PSObject</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>true</PipelinePropertyName>
-          <Positional>true</Positional>
-          <Position>1</Position>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
             <string>System.Management.Automation.ParameterAttribute</string>
@@ -85,19 +70,10 @@ Cet appel peut également générer les fichiers suivants :
           <Aliases />
           <Description>Spécifie le chemin d’accès du répertoire contenant le script généré. Les caractères génériques sont autorisés.
 Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
-          <Globbing>true</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="PSObject" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="true" isPos="true" pos="1" globbing="false">
           <Name>DestinationLiteral</Name>
-          <Type>PSObject</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>true</PipelinePropertyName>
-          <Positional>true</Positional>
-          <Position>1</Position>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
             <string>System.Management.Automation.ParameterAttribute</string>
@@ -107,19 +83,10 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
 Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.
 
 Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="String" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="true" pos="2" globbing="false">
           <Name>Encoding</Name>
-          <Type>String</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>true</Positional>
-          <Position>2</Position>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
             <string>System.Management.Automation.ValidateSetAttribute</string>
@@ -127,57 +94,30 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
           </Attributes>
           <Aliases />
           <Description>Consultez l'aide du provider FileSystem, section PARAMÈTRES DYNAMIQUES : Get-Help FileSystem</Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="SwitchParameter" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="false" pos="named" globbing="false">
           <Name>Force</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
           <Attributes>
             <string>System.Management.Automation.ParameterAttribute</string>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
           <Description>La présence de ce paramètre évite une demande de confirmation si le fichier cible .ps1 existe déjà.</Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="SwitchParameter" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="false" pos="named" globbing="false">
           <Name>HideConsole</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
           <Attributes>
             <string>System.Management.Automation.ParameterAttribute</string>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
           <Description>Masque la console lors de l'appel à la méthode ShowDialog() du formulaire principal.</Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="SwitchParameter" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="false" pos="named" globbing="false">
           <Name>asFunction</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
           <Attributes>
             <string>System.Management.Automation.ParameterAttribute</string>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
@@ -185,19 +125,10 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
           <Aliases />
           <Description>Le code du script généré est inséré dans une fonction.
 Par défaut son nom est 'GeneratePrimaryForm', si le paramètre -Secondary est précisé, alors le nom de la fonction est 'GenerateSecondaryForm'.</Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="String" varLen="false" required="true" dynamic="false" pipeRemaining="false" pipe="true" pipeProp="false" isPos="true" pos="0" globbing="false">
           <Name>LiteralPath</Name>
-          <Type>String</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>true</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>true</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>true</Positional>
-          <Position>0</Position>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
             <string>System.Management.Automation.AliasAttribute</string>
@@ -211,19 +142,10 @@ Par défaut son nom est 'GeneratePrimaryForm', si le paramètre -Secondary est p
 
 Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples.
 Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.</Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="SwitchParameter" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="false" pos="named" globbing="false">
           <Name>Secondary</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
           <Attributes>
             <string>System.Management.Automation.ParameterAttribute</string>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
@@ -232,26 +154,17 @@ Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne 
           <Description>La présence de ce paramètre génère un script d'un formulaire secondaire en évitant de dupliquer du code. 
 C'est à dire qu'il utilisera une partie du code généré dans le formulaire principal.
 Si le paramètre -AsFunction est précisé, alors le nom de la fonction sera 'GenerateSecondaryForm'.</Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="SwitchParameter" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="false" pos="named" globbing="false">
           <Name>Passthru</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
           <Attributes>
             <string>System.Management.Automation.ParameterAttribute</string>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
           <Description>Emet l'objet fichier correspondant au script .ps1 généré.</Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
       </Parameters>
       <Examples>
@@ -263,6 +176,7 @@ Convert-Form -Path $FormPath
           <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
 
 Le script généré concerne un formulaire principal.</Description>
+          <Output />
         </Example>
         <Example>
           <Name>Example 2</Name>
@@ -275,19 +189,21 @@ Convert-Form -Path $FormPath -Destination C:\Temp\MyForm -Force
 La présence du paramètre -Force écrase le fichier s'il existe déjà.
 
 Le script généré concerne un formulaire principal.</Description>
+          <Output />
         </Example>
         <Example>
           <Name>Example 3</Name>
           <Cmd>$ScriptWinform=Convert-Form -LiteralPath "$ProjetPath\TestsWinform\Test21LiteralPath[AG]Naming\Frm[AG].Designer.cs" -DestinationLiteral C:\Temp\FormAG -Encoding unicode -passthru -Verbose</Cmd>
           <Description>Converti un fichier, dont le nom contient des jokers Powershell, en un script Powershell "C:\Temp\FormAG Frm[AG].ps1". L'usage des paramètres -LiteralPath et -DestinationLiteral sont ici nécessaires.
 
-Le paramètre -Encoding encode en Unicode le fichier résultant. Par default chaque fichier est encodé en UTF8.
+Le paramètre -Encoding encode en Unicode le fichier résultant. Par défaut chaque fichier est encodé en UTF8.
 
 Le paramètre -Verbose détail les opérations.
 
 Le paramètre -Passthru renvoie dans la variable $ScriptWinform l'objet fichier généré.
 
 Le script généré concerne un formulaire principal.</Description>
+          <Output />
         </Example>
         <Example>
           <Name>Example 4</Name>
@@ -297,52 +213,23 @@ Convert-Form -Path $FormPath -Secondary</Cmd>
 
 Le script ne contient pas le code chargement des assemblies, celui-ci se trouve dans le script d'un formulaire principal.
 Le script généré concerne donc un formulaire secondaire.</Description>
+          <Output />
         </Example>
         <Example>
           <Name>Example 5</Name>
           <Cmd>Convert-Form Form1.Designer.cs -HideConsole </Cmd>
-          <Description>Converti la form en lui ajoutant le code masquant la fenêtre de la console powershell durant le temps d'exécution de la fenêtre.
+          <Description>Converti la form en lui ajoutant le code masquant la fenêtre de la console Powershell durant le temps d'exécution de la fenêtre.
 
 Le script généré concerne un formulaire principal.</Description>
+          <Output />
         </Example>
       </Examples>
       <RelatedLinks />
-      <SupportInformation>
-        <ADChecked>false</ADChecked>
-        <RsatChecked>false</RsatChecked>
-        <Ps2Checked>false</Ps2Checked>
-        <Ps3Checked>false</Ps3Checked>
-        <Ps4Checked>true</Ps4Checked>
-        <WinXpChecked>false</WinXpChecked>
-        <WinVistaChecked>false</WinVistaChecked>
-        <Win7Checked>false</Win7Checked>
-        <Win8Checked>false</Win8Checked>
-        <Win81Checked>false</Win81Checked>
-        <Win2003Checked>false</Win2003Checked>
-        <Win2003StdChecked>false</Win2003StdChecked>
-        <Win2003EEChecked>false</Win2003EEChecked>
-        <Win2003DCChecked>false</Win2003DCChecked>
-        <Win2008Checked>false</Win2008Checked>
-        <Win2008StdChecked>false</Win2008StdChecked>
-        <Win2008EEChecked>false</Win2008EEChecked>
-        <Win2008DCChecked>false</Win2008DCChecked>
-        <Win2008R2Checked>false</Win2008R2Checked>
-        <Win2008R2StdChecked>false</Win2008R2StdChecked>
-        <Win2008R2EEChecked>false</Win2008R2EEChecked>
-        <Win2008R2DCChecked>false</Win2008R2DCChecked>
-        <Win2012Checked>false</Win2012Checked>
-        <Win2012StdChecked>false</Win2012StdChecked>
-        <Win2012DCChecked>false</Win2012DCChecked>
-        <Win2012R2Checked>false</Win2012R2Checked>
-        <Win2012R2StdChecked>false</Win2012R2StdChecked>
-        <Win2012R2DCChecked>false</Win2012R2DCChecked>
-      </SupportInformation>
+      <SupportInformation ad="false" rsat="false" ps2="false" ps3="false" ps4="true" ps5="false" wxp="false" wv="false" w7="false" w8="false" w81="false" w2k3s="false" w2k3e="false" w2k3d="false" w2k8s="false" w2k8e="false" w2k8d="false" w2k8r2s="false" w2k8r2e="false" w2k8r2d="false" w2k12s="false" w2k12d="false" w2k12r2s="false" w2k12r2d="false" />
       <Publish>false</Publish>
     </CmdletObject>
-    <CmdletObject>
+    <CmdletObject verb="Test" noun="PSScript">
       <Name>Test-PSScript</Name>
-      <Verb>Test</Verb>
-      <Noun>PSScript</Noun>
       <GeneralHelp>
         <Synopsis>Valide la syntaxe d'un fichier powershell.</Synopsis>
         <Description>Valide la syntaxe d'un fichier powershell.
@@ -351,24 +238,22 @@ Si le code powershell contient des erreurs de syntaxe, la fonction renvoie une c
 Si un des fichiers à tester n'existe pas, la fonction émet un warning.
 </Description>
         <Notes>Source : http://blogs.microsoft.co.il/blogs/scriptfanatic/archive/2009/09/07/parsing-powershell-scripts.aspx</Notes>
+        <InputType />
+        <InputUrl />
+        <InputTypeDescription />
         <ReturnType>System.Management.Automation.PSParseError</ReturnType>
+        <ReturnUrl />
         <ReturnTypeDescription>En cas d'erreur renvoie la ou les erreurs de syntaxe, sinon ne renvoie rien</ReturnTypeDescription>
       </GeneralHelp>
+      <ParamSets>
+        <CommandParameterSetInfo2 Name="__AllParameterSets" Params="FilePath IncludeSummaryReport Verbose Debug ErrorAction WarningAction ErrorVariable WarningVariable OutVariable OutBuffer PipelineVariable" />
+      </ParamSets>
       <Syntax>
         <string>Test-PSScript [-FilePath] &lt;String[]&gt; [-IncludeSummaryReport]</string>
       </Syntax>
       <Parameters>
-        <ParameterDescription>
+        <ParameterDescription type="String[]" varLen="true" required="true" dynamic="false" pipeRemaining="false" pipe="true" pipeProp="true" isPos="true" pos="0" globbing="false">
           <Name>FilePath</Name>
-          <Type>String[]</Type>
-          <AcceptsArray>true</AcceptsArray>
-          <Mandatory>true</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>true</Pipeline>
-          <PipelinePropertyName>true</PipelinePropertyName>
-          <Positional>true</Positional>
-          <Position>0</Position>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
             <string>System.Management.Automation.AliasAttribute</string>
@@ -384,19 +269,10 @@ Si un des fichiers à tester n'existe pas, la fonction émet un warning.
 Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples.
 Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.
 </Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription>
+        <ParameterDescription type="SwitchParameter" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="false" pos="named" globbing="false">
           <Name>IncludeSummaryReport</Name>
-          <Type>SwitchParameter</Type>
-          <AcceptsArray>false</AcceptsArray>
-          <Mandatory>false</Mandatory>
-          <Dynamic>false</Dynamic>
-          <RemainingArgs>false</RemainingArgs>
-          <Pipeline>false</Pipeline>
-          <PipelinePropertyName>false</PipelinePropertyName>
-          <Positional>false</Positional>
-          <Position>named</Position>
           <Attributes>
             <string>System.Management.Automation.ParameterAttribute</string>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
@@ -404,7 +280,7 @@ Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne 
           <Aliases />
           <Description>Affiche un résultat sommaire des fichiers testés via un appel à Write-Verbose.
 </Description>
-          <Globbing>false</Globbing>
+          <DefaultValue />
         </ParameterDescription>
       </Parameters>
       <Examples>
@@ -416,6 +292,7 @@ if ($SyntaxErrors.Count -gt 0)
 { Write-Error "Syntax error" }
      </Cmd>
           <Description>Si le fichier $FilePSPS1 contient au moins une erreurs de syntaxe, l'appelant génèrera une erreur.</Description>
+          <Output />
         </Example>
         <Example>
           <Name>Example 2</Name>
@@ -430,39 +307,11 @@ COMMENTAIRES : 1 script(s) processed, 1 script(s) contain syntax errors,  0 fil
 
 Sinon ce sera celui-ci:
 COMMENTAIRES : 1 script(s) processed, 0 script(s) contain syntax errors,  0 file(s) unknown.</Description>
+          <Output />
         </Example>
       </Examples>
       <RelatedLinks />
-      <SupportInformation>
-        <ADChecked>false</ADChecked>
-        <RsatChecked>false</RsatChecked>
-        <Ps2Checked>false</Ps2Checked>
-        <Ps3Checked>false</Ps3Checked>
-        <Ps4Checked>false</Ps4Checked>
-        <WinXpChecked>false</WinXpChecked>
-        <WinVistaChecked>false</WinVistaChecked>
-        <Win7Checked>false</Win7Checked>
-        <Win8Checked>false</Win8Checked>
-        <Win81Checked>false</Win81Checked>
-        <Win2003Checked>false</Win2003Checked>
-        <Win2003StdChecked>false</Win2003StdChecked>
-        <Win2003EEChecked>false</Win2003EEChecked>
-        <Win2003DCChecked>false</Win2003DCChecked>
-        <Win2008Checked>false</Win2008Checked>
-        <Win2008StdChecked>false</Win2008StdChecked>
-        <Win2008EEChecked>false</Win2008EEChecked>
-        <Win2008DCChecked>false</Win2008DCChecked>
-        <Win2008R2Checked>false</Win2008R2Checked>
-        <Win2008R2StdChecked>false</Win2008R2StdChecked>
-        <Win2008R2EEChecked>false</Win2008R2EEChecked>
-        <Win2008R2DCChecked>false</Win2008R2DCChecked>
-        <Win2012Checked>false</Win2012Checked>
-        <Win2012StdChecked>false</Win2012StdChecked>
-        <Win2012DCChecked>false</Win2012DCChecked>
-        <Win2012R2Checked>false</Win2012R2Checked>
-        <Win2012R2StdChecked>false</Win2012R2StdChecked>
-        <Win2012R2DCChecked>false</Win2012R2DCChecked>
-      </SupportInformation>
+      <SupportInformation ad="false" rsat="false" ps2="false" ps3="false" ps4="false" ps5="false" wxp="false" wv="false" w7="false" w8="false" w81="false" w2k3s="false" w2k3e="false" w2k3d="false" w2k8s="false" w2k8e="false" w2k8d="false" w2k8r2s="false" w2k8r2e="false" w2k8r2d="false" w2k12s="false" w2k12d="false" w2k12r2s="false" w2k12r2d="false" />
       <Publish>false</Publish>
     </CmdletObject>
   </Cmdlets>

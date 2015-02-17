@@ -1,11 +1,6 @@
 
 #PowerShell Form Converter
 
-#todo : Ajout try /finally pour
-# $ModalResult=$WinForm.ShowDialog()
-# $WinForm.Dispose()
-# Show-Window
-
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
  
  #On charge les méthodes de construction et d'analyse du fichier C#
@@ -276,9 +271,8 @@ function Convert-Form {
         }
         [void]$Components.Add($Ligne)
         Write-Debug "`t`t$Ligne"
-       #todo test sous PS v2 et v3
-       if (-not $STA)
-       {
+        if (-not $STA)
+        {
           $STAReason=[string]::Empty 
           if ($Ligne.contains('System.Windows.Forms.WebBrowser') )
           { $STAReason='component WebBrowser' }
@@ -293,7 +287,7 @@ function Convert-Form {
             $STA=$true
             Write-Warning ($ConvertFormMsgs.AddSTARequirement -F $STAReason)
           }
-       }                  
+        }                  
       }
      
      #La form nécessite-t-elle l'usage du fichier resx du projet ?
@@ -535,15 +529,13 @@ Function $FunctionName {
   Write-Debug "Début de la troisième analyse"
   $progress=0
   $setBrkPnt=$true
-  $BPLigneRead,$BPLigneWrite=$null
+  $BPLigneWrite=$null
   
    #Lance la modification du texte d'origine
   foreach ($Ligne in $Components)
   {
-      Write-debug "---------Traite la ligne : $Ligne"
      if ($setBrkPnt -and ($DebugPreference -ne "SilentlyContinue"))
      {
-       $BPLigneRead=Set-PSBreakpoint -Variable Ligne -Mode Read -Action { Write-Debug "[R]$Ligne"}
        $BPLigneWrite=Set-PSBreakpoint -Variable Ligne -Mode Write -Action { Write-Debug "[W]$Ligne"}
        $setBrkPnt=$false
      }
@@ -553,7 +545,8 @@ Function $FunctionName {
        #Cela facilite la construction des expressions régulières
      $Ligne = $Ligne.trim()
      if ($Ligne -eq [string]::Empty) {Continue} #Ligne suivante
-  
+
+     Write-debug "---------Traite la ligne : $Ligne"
        # On ajoute la création d'un événement
        # Gestion d'un event d'un composant :  this.btnRunClose.Click += new System.EventHandler(this.btnRunClose_Click);
   
@@ -592,7 +585,7 @@ Function $FunctionName {
        #       this.bindingNavigator1.AddNewItem = this.bindingNavigatorAddNewItem;
      $MatchTmp =[Regex]::Match($Ligne,"^(.*?) = (this|global::|\(\().*")   
      if ($MatchTmp.Success -eq $false)
-     {$Ligne = $Ligne -replace "^(.*)= (.*)\.(\w+);$", '$1=[$2]::$3'}
+     {$Ligne = $Ligne -replace "^(.*)= (.*)\.(\w+);$", '$1= [$2]::$3'}
   
       # Suppression du token C# de fin de ligne 
      $Ligne = $Ligne -replace '\s*;\s*$',''
@@ -805,21 +798,25 @@ Function $FunctionName {
       }                                                                 
    # -------  Traite les appels de méthode statique
      #System.Parse("-00:00:01");
-     #System.TimeSpan.Parse("-00:00:01");
      #System.T1.T2.T3.Parse("-00:00:01");
-     #todo : regex en une passe 
-     if ($Ligne -notmatch '^(.*) =\s*(\$|\()')
+     # ' this.directorySearcher1.ClientTimeout = System.TimeSpan.Parse("-00:00:01");'
+     if ($Ligne -notmatch '^(.*) =\s*(\$|\(|\[|New-Object)')
      { 
-      # Write-Debug "Change méthode statique : $Ligne"
-       $Ligne = $Ligne -replace '^(.*) =\s*(.[^\s]*)\.(.[^\.\s]*?)\(','$1 = [$2]::$3(' 
-     } 
-     
+        if ($Ligne -match '^(?<Var>.*?) = (?<Class>.*)\.(?<Method>\w+)\((?<Parameter>.*)\)$')
+        {
+          $Ligne = '{0} = [{1}]::{2}({3})' -F $Matches.Var,$Matches.Class,$Matches.Method,$Matches.Parameter
+          Write-Debug "Change méthode statique : $Ligne"
+        }
+        else { Write-Debug "Ne match pas  : $Ligne"}
+     }
+     #else { Write-Debug "N'est pas une méthode statique : $Ligne"}
+  
      Write-debug '---------------------'      
       [void]$LinesNewScript.Add($Ligne)
    } #foreach
 
   if ($DebugPreference -ne "SilentlyContinue")
-  { $BPLigneRead,$BPLigneWrite | Remove-PSBreakpoint }
+  { $BPLigneWrite | Remove-PSBreakpoint }
   Write-Debug "Conversion du code CSharp effectuée."
   
   [void]$LinesNewScript.Add( (Add-SpecialEventForm $FormName -HideConsole:$HideConsole))

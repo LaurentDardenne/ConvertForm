@@ -1,13 +1,12 @@
-
-#PowerShell Form Converter
+ï»¿#PowerShell Form Converter
 
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
  
- #On charge les méthodes de construction et d'analyse du fichier C#
+ #On charge les mÃ©thodes de construction et d'analyse du fichier C#
 Import-Module "$psScriptRoot\Transform.psm1" -DisableNameChecking -Verbose:$false
 
- #Analyse d'un pspath
-."$psScriptRoot\Tools\New-PSPathInfo.ps1"
+ #Inclusion de la fonction d'analyse d'un pspath
+#<INCLUDE %'ConvertForm:\Tools\New-PSPathInfo.ps1'%>
 
 try {
   $OLDWP,$WarningPreference=$WarningPreference,'SilentlyContinue'
@@ -89,11 +88,11 @@ function Convert-Form {
      [Alias('PSPath')]
    [string]$LiteralPath,
        
-       #On attend un nom de répertoire
-      [parameter(position=1,ValueFromPipelineByPropertyName=$True)]
+       #On attend un nom de rÃ©pertoire
+      [parameter(position=1,ValueFromPipelineByPropertyName=$True, ParameterSetName="Path")]
     [PSObject] $Destination, #todo teste delayed SB    
     
-      [parameter(position=1,ValueFromPipelineByPropertyName=$True)]
+      [parameter(position=1,ValueFromPipelineByPropertyName=$True, ParameterSetName="LiteralPath")]
     [PSObject] $DestinationLiteral, #todo teste delayed SB     
     
      [Parameter(Position=2,Mandatory=$false)]
@@ -122,12 +121,12 @@ function Convert-Form {
   
   if ($_EA -eq $null)
   {
-     #Récupère la valeur du contexte de l'appelant
+     #RÃ©cupÃ¨re la valeur du contexte de l'appelant
     $ErrorActionPreference=$PSCmdlet.SessionState.PSVariable.Get('ErrorActionPreference').Value
   }
   else 
   { 
-     #Priorité: On remplace sa valeur
+     #PrioritÃ©: On remplace sa valeur
     $ErrorActionPreference=$_EA
   }
   
@@ -150,7 +149,7 @@ function Convert-Form {
   else
   { $Destination=($Destination -as [String]).Trim()}
    
-  #Valide les prérequis concernant les fichiers
+  #Valide les prÃ©requis concernant les fichiers
   if ($isLiteral)
   { $SourcePathInfo=New-PSPathInfo -LiteralPath ($LiteralPath.Trim())|Add-FileSystemValidationMember }
   else
@@ -158,9 +157,9 @@ function Convert-Form {
  
   $FileName=$SourcePathInfo.GetFileName()
   
-   #Le PSPath doit exister, ne pas être un répertoire, ne pas contenir de globbing et être sur le FileSystem
+   #Le PSPath doit exister, ne pas Ãªtre un rÃ©pertoire, ne pas contenir de globbing et Ãªtre sur le FileSystem
    #On doit lire un fichier.
-   #On précise la raison de l'erreur
+   #On prÃ©cise la raison de l'erreur
   if (!$SourcePathInfo.isFileSystemItemFound()) 
   {
     if (!$SourcePathInfo.isDriveExist) 
@@ -182,7 +181,7 @@ function Convert-Form {
   if ($SourceFI.Attributes -eq 'Directory')
   { Throw (New-Object System.ArgumentException(($ConvertFormMsgs.ParameterMustBeAfile -F $FileName),'Source')) } 
   
-   #Le cast de Destination renvoit-il une chaîne ayant au moins un caractère différent d'espace ? 
+   #Le cast de Destination renvoit-il une chaÃ®ne ayant au moins un caractÃ¨re diffÃ©rent d'espace ? 
   if ($Destination -ne [String]::Empty)
   {
     if ($isDestinationLiteral) 
@@ -192,9 +191,9 @@ function Convert-Form {
     
     $FileName=$DestinationPathInfo.GetFileName()
 
-    #Le PSPath doit être valide, ne pas contenir de globbing (sauf si literalPath) et être sur le FileSystem
-    #Le PSPath doit exister et pointer sur un répertoire :  { md C:\temp\test00 -Force}
-    #On précise la raison de l'erreur
+    #Le PSPath doit Ãªtre valide, ne pas contenir de globbing (sauf si literalPath) et Ãªtre sur le FileSystem
+    #Le PSPath doit exister et pointer sur un rÃ©pertoire :  { md C:\temp\test00 -Force}
+    #On prÃ©cise la raison de l'erreur
     if (!$DestinationPathInfo.IsaValidNameForTheFileSystem()) 
     {
       if (!$DestinationPathInfo.isDriveExist) 
@@ -218,24 +217,24 @@ function Convert-Form {
   }
   else 
   { 
-     #$Destination n'est pas utilisable ou n'a pas été précisé ( $null -> String.Empty) 
+     #$Destination n'est pas utilisable ou n'a pas Ã©tÃ© prÃ©cisÃ© ( $null -> String.Empty) 
     $ProjectPaths=New-FilesName $psScriptRoot $SourceFI
   }
 
-  Write-Debug "Fin des contrôles."
+  Write-Debug "Fin des contrÃ´les."
 
   # Collection des lignes utiles de InitializeComponent() : $Components
   # Note:
-  # Le code généré automatiquement par le concepteur Windows Form est inséré 
-  # dans la méthode InitializeComponent. 
-  # L'intégralité du code d'une méthode C# est délimité par { ... } 
-  # On insére ces lignes de code et uniquement celles-ci dans le tableau $Component.
+  # Le code gÃ©nÃ©rÃ© automatiquement par le concepteur Windows Form est insÃ©rÃ© 
+  # dans la mÃ©thode InitializeComponent. 
+  # L'intÃ©gralitÃ© du code d'une mÃ©thode C# est dÃ©limitÃ© par { ... } 
+  # On insÃ©re ces lignes de code et uniquement celles-ci dans le tableau $Component.
   # -----------------------------------------------------------------------------
   $Components = New-Object System.Collections.ArrayList(400)
   $ErrorProviders =New-Object System.Collections.ArrayList(5)
   [boolean] $isDebutCodeInit = $false
   [string] $FormName=[string]::Empty
-  [boolean] $IsUsedPropertiesResources= $false  # On utilise le fichier de ressources des propriétés du projet
+  [boolean] $IsUsedPropertiesResources= $false  # On utilise le fichier de ressources des propriÃ©tÃ©s du projet
   
   Write-Verbose ($ConvertFormMsgs.BeginAnalyze -F $ProjectPaths.Source)
 
@@ -244,30 +243,30 @@ function Convert-Form {
   else
   { $Lignes= Get-Content -Path $ProjectPaths.Source -ErrorAction Stop }
   
-  Write-Debug "Début de la première analyse"
+  Write-Debug "DÃ©but de la premiÃ¨re analyse"
   foreach ($Ligne in $Lignes)
   {
     if (! $isDebutCodeInit)
-    {  # On démarre l'insertion à partir de cette ligne
-       # On peut donc supposer que l'on parse un fichier créé par le designer VS
+    {  # On dÃ©marre l'insertion Ã  partir de cette ligne
+       # On peut donc supposer que l'on parse un fichier crÃ©Ã© par le designer VS
       if ($Ligne.contains('InitializeComponent()')) {$isDebutCodeInit= $true}
     }
     else 
     {  
       if ($Ligne.Trim() -eq [string]::Empty) {continue}
      
-       # Fin de la méthode rencontrée ou ligne vide, on quitte l'itération. 
+       # Fin de la mÃ©thode rencontrÃ©e ou ligne vide, on quitte l'itÃ©ration. 
       if (($Ligne.trim() -eq "}") -or ($Ligne.trim() -eq [string]::Empty)) {break}
       
-       # C'est une ligne de code, on l'insére 
+       # C'est une ligne de code, on l'insÃ©re 
       if ($Ligne.trim() -ne "{") 
       {    
-          # On récupère le nom de la form dans $FormName
+          # On rÃ©cupÃ¨re le nom de la form dans $FormName
           # Note:  On recherche la ligne d'affectation du nom de la Form :  this.Name = "Form1";  
         if ($Ligne -match '^\s*this\.Name\s*=\s*"(?<nom>[^"]+)"\w*' ) 
         { 
            $FormName = $matches["nom"]
-           Write-debug "Nom de la forme trouvé : '$FormName'"
+           Write-debug "Nom de la forme trouvÃ© : '$FormName'"
         }
         [void]$Components.Add($Ligne)
         Write-Debug "`t`t$Ligne"
@@ -290,11 +289,11 @@ function Convert-Form {
         }                  
       }
      
-     #La form nécessite-t-elle l'usage du fichier resx du projet ?
+     #La form nÃ©cessite-t-elle l'usage du fichier resx du projet ?
      if ( ($IsUsedPropertiesResources -eq $false) -and ($Ligne -Match '^(.*)= global::(.*?\.Properties.Resources\.)') )
      { 
        $IsUsedPropertiesResources=$true
-       Write-debug "Nécessite le fichier resx du propriétés du projet"
+       Write-debug "NÃ©cessite le fichier resx du propriÃ©tÃ©s du projet"
      }
     }#else
   } #foreach
@@ -304,7 +303,7 @@ function Convert-Form {
   {  
     $PSCmdlet.WriteError(
     (New-Object System.Management.Automation.ErrorRecord (
-         #Recrée l'exception trappée avec un message personnalisé 
+         #RecrÃ©e l'exception trappÃ©e avec un message personnalisÃ© 
 	   (new-object ConvertForm.CSParseException( ($ConvertFormMsgs.InitializeComponentNotFound -F $ProjectPaths.Source ))),                         
        "AnalyzeWinformDesignerFileError", 
        "InvalidData",
@@ -322,7 +321,7 @@ function Convert-Form {
      { $WarningName=$ConvertFormMsgs.DesignerNameNotFound }
     $PSCmdlet.WriteError(
      (New-Object System.Management.Automation.ErrorRecord (
-         #Recrée l'exception trappée avec un message personnalisé 
+         #RecrÃ©e l'exception trappÃ©e avec un message personnalisÃ© 
 	   (new-object ConvertForm.CSParseException(($ConvertFormMsgs.FormNameNotFound -F $ProjectPaths.Source,$WarningName))),                         
        "AnalyzeWinformDesignerFileError", 
        "InvalidData",
@@ -333,10 +332,10 @@ function Convert-Form {
     return
   }
   
-  Backup-Collection $Components "Récupération des lignes de code, de la méthode InitializeComponent, effectuée."
+  Backup-Collection $Components "RÃ©cupÃ©ration des lignes de code, de la mÃ©thode InitializeComponent, effectuÃ©e."
   # Collection de lignes constituant le nouveau script :  $LinesNewScript
   # Note:
-  # Les déclarations des composants d'une Form se situent entre les lignes suivantes :
+  # Les dÃ©clarations des composants d'une Form se situent entre les lignes suivantes :
   #
   #   this.SuspendLayout();
   #   ...
@@ -352,21 +351,21 @@ function Convert-Form {
   }
  
    # Le code STA et l'appel de l'API ne seront 
-   # pas dans la fonction si -asFunction est précisé
+   # pas dans la fonction si -asFunction est prÃ©cisÃ©
   if ($STA)
   { 
-     #Dans le cas d'usage de deux fenêtres, l'une ou l'autre peut utiliser 
-     #des composants nécessitant le mode STA. 
-     #L'utilisateur remaniera les scripts générés. 
+     #Dans le cas d'usage de deux fenÃªtres, l'une ou l'autre peut utiliser 
+     #des composants nÃ©cessitant le mode STA. 
+     #L'utilisateur remaniera les scripts gÃ©nÃ©rÃ©s. 
     Write-Debug "[Ajout Code] Add-TestApartmentState"
     [void]$LinesNewScript.Add( (Add-TestApartmentState) ) 
   } 
     
   If ($HideConsole)
   { 
-     #Dans le cas d'usage de deux fenêtres, la génération de l'une ou de l'autre ou des deux
-     #peut utiliser le paramètre HideConsole. 
-     #L'utilisateur remaniera les scripts générés.    
+     #Dans le cas d'usage de deux fenÃªtres, la gÃ©nÃ©ration de l'une ou de l'autre ou des deux
+     #peut utiliser le paramÃ¨tre HideConsole. 
+     #L'utilisateur remaniera les scripts gÃ©nÃ©rÃ©s.    
     Write-Debug "[Ajout Code] Win32FunctionsType"
     [void]$LinesNewScript.Add((Add-Win32FunctionsType))
     [void]$LinesNewScript.Add((Add-Win32FunctionsWrapper))
@@ -390,12 +389,12 @@ Function $FunctionName {
   }
 
   
-  [boolean] $IsTraiteMethodesForm = $False # Jusqu'à la rencontre de la chaîne " # Form1  "
+  [boolean] $IsTraiteMethodesForm = $False # Jusqu'Ã  la rencontre de la chaÃ®ne " # Form1  "
   [boolean] $IsUsedResources= $false       # On utilise un fichier de ressources
   
   #-----------------------------------------------------------------------------
-  #  Transforme les déclarations de propriétés sur plusieurs lignes 
-  #  en une déclaration sur une seule lignes.   
+  #  Transforme les dÃ©clarations de propriÃ©tÃ©s sur plusieurs lignes 
+  #  en une dÃ©claration sur une seule lignes.   
   #----------------------------------------------------------------------------- 
   if (Test-Path Variable:Ofs)
   {$oldOfs,$Ofs=$Ofs,"`r`n" }
@@ -408,7 +407,7 @@ Function $FunctionName {
    #Transforme une collection en une string
   $Temp="$Components"
    #Logiquement on utilise VS et Convert-Form pour le designer graphique et les event 
-   #pas pour renseigner toutes les propriétés de type texte 
+   #pas pour renseigner toutes les propriÃ©tÃ©s de type texte 
   $Temp=$Temp -replace "\s{2,}\| ","| "
   $Ofs=$oldOfs
   $Components = New-Object System.Collections.ArrayList($null)
@@ -417,10 +416,10 @@ Function $FunctionName {
   Remove-Variable Temp
   
   
-  Write-Debug "Début de la seconde analyse"
+  Write-Debug "DÃ©but de la seconde analyse"
   for ($i=0; $i -le $Components.Count-1 ;$i++)
   {    
-      #Contrôle la présence d'un composant de gestion de ressources (images graphique principalement)
+      #ContrÃ´le la prÃ©sence d'un composant de gestion de ressources (images graphique principalement)
      if ($IsUsedResources -eq $false)
      {
        $crMgr=[regex]::match($Components[$i],"\s= new System\.ComponentModel\.ComponentResourceManager\(typeof\((.*)\)\);$")
@@ -428,7 +427,7 @@ Function $FunctionName {
        {
          $IsUsedResources = $True
          Write-Debug "IsUsedResources : $IsUsedResources"
-          #Dans PS, le fichier de ressources n'est pas géré par cette ligne.
+          #Dans PS, le fichier de ressources n'est pas gÃ©rÃ© par cette ligne.
           #On supprime son contenu, la seconde passe l'ignorera.
          $Components[$i]='' 
          continue
@@ -445,30 +444,30 @@ Function $FunctionName {
      }
     
     # -----------------------------------------------------------------------------------------------------------------
-      #On supprime les lignes ressemblant à : 
+      #On supprime les lignes ressemblant Ã  : 
          # // 
          # // errorProviderN
          # // 
          # this.errorProviderN.ContainerControl = this;
-      # Elles seront recrées lors de la phase d'analyse des lignes restantes
-      # A ce point on connait tous les ErrorProvider déclarés
+      # Elles seront recrÃ©es lors de la phase d'analyse des lignes restantes
+      # A ce point on connait tous les ErrorProvider dÃ©clarÃ©s
        
-       #on test si la ligne courante contient une affectation concernant un des Errorproviders trouvé précédement
+       #on test si la ligne courante contient une affectation concernant un des Errorproviders trouvÃ© prÃ©cÃ©dement
       $ErrorProviders |`
-        #Pour chaque éléments on construit la regex
+        #Pour chaque Ã©lÃ©ments on construit la regex
       ForEach  {
          $StrMatch="^\s*this.$_.ContainerControl = this;$"
          if ($Components[$i] -match $StrMatch)
          {
            Write-Debug "Match Foreach ErrorProvider"
-            #On efface le contenu de la ligne et les 3 précédentes
+            #On efface le contenu de la ligne et les 3 prÃ©cÃ©dentes
            -3..0|%{ $Components[$i+$_]=[string]::Empty}
          }#If
       }#ForEach
      # -----------------------------------------------------------------------------------------------------------------
       
-      # Suppression des lignes contenant un appel aux méthodes suivantes : SuspendLayout, ResumeLayout et PerformLayout
-      #  SuspendLayout() force Windows à ne pas redessiner la form. 
+      # Suppression des lignes contenant un appel aux mÃ©thodes suivantes : SuspendLayout, ResumeLayout et PerformLayout
+      #  SuspendLayout() force Windows Ã  ne pas redessiner la form. 
       #Ligne se terminant seulement par Layout(false); ou Layout(true); ou Layout();
       if ($Components[$i] -match ('Layout\((false|true)??\);$'))
       {$Components[$i]=[string]::Empty;continue}
@@ -479,15 +478,15 @@ Function $FunctionName {
       if ($Components[$i].Contains('AutoScale'))
       {$Components[$i]=[string]::Empty;Continue}
   
-      # Aucun équivalent ne semble exister en Powershell pour ces commandes :
-      # Pour les contrôles : DataGridView, NumericUpDown et PictureBox
+      # Aucun Ã©quivalent ne semble exister en Powershell pour ces commandes :
+      # Pour les contrÃ´les : DataGridView, NumericUpDown et PictureBox
       # Suppression des lignes de gestion du DataBinding. 
       if ($Components[$i].Contains('((System.ComponentModel.ISupportInitialize)(') )
       {$Components[$i]=[string]::Empty;Continue}
   }#for
-  Backup-Collection $Components 'Modifications des déclarations multi-lignes effectuées.'
+  Backup-Collection $Components 'Modifications des dÃ©clarations multi-lignes effectuÃ©es.'
   #-----------------------------------------------------------------------------
-  #  Fin de traitements des propriétés "multi-lignes"
+  #  Fin de traitements des propriÃ©tÃ©s "multi-lignes"
   #----------------------------------------------------------------------------- 
   
   If(-not $Secondary)
@@ -522,11 +521,11 @@ Function $FunctionName {
     New-ResourcesFile -Source $rsxSource -Destination $rsxDestination -isLiteral:$isLiteral -EA $ErrorActionPreference -verbose:$isVerbose 
   }
 
-  #On ajoute la création de la form avant tout autre composant
-  #Le code de chaque composant référençant cet objet est assuré de son existence
+  #On ajoute la crÃ©ation de la form avant tout autre composant
+  #Le code de chaque composant rÃ©fÃ©renÃ§ant cet objet est assurÃ© de son existence
   [void]$LinesNewScript.Add("`$$FormName = New-Object System.Windows.Forms.Form`r`n")
   
-  Write-Debug "Début de la troisième analyse"
+  Write-Debug "DÃ©but de la troisiÃ¨me analyse"
   $progress=0
   $setBrkPnt=$true
   $BPLigneWrite=$null
@@ -541,45 +540,45 @@ Function $FunctionName {
      }
      $progress++                     
      Write-Progress -id 1 -activity ($ConvertFormMsgs.TransformationProgress -F $Components.Count) -status $ConvertFormMsgs.TransformationProgressStatus -percentComplete (($progress/$Components.count)*100)
-       #On supprime les espaces en début et en fin de chaînes
-       #Cela facilite la construction des expressions régulières
+       #On supprime les espaces en dÃ©but et en fin de chaÃ®nes
+       #Cela facilite la construction des expressions rÃ©guliÃ¨res
      $Ligne = $Ligne.trim()
      if ($Ligne -eq [string]::Empty) {Continue} #Ligne suivante
 
      Write-debug "---------Traite la ligne : $Ligne"
-       # On ajoute la création d'un événement
+       # On ajoute la crÃ©ation d'un Ã©vÃ©nement
        # Gestion d'un event d'un composant :  this.btnRunClose.Click += new System.EventHandler(this.btnRunClose_Click);
   
-       # La ligne débute par "this" suivi d'un point puis du nom du composant puis du nom de l'event
+       # La ligne dÃ©bute par "this" suivi d'un point puis du nom du composant puis du nom de l'event
        # this.TxtBoxSaisirNombre.Validating += new System.ComponentModel.CancelEventHandler(this.TxtBox1_Validating);
      if ($Ligne -match '^this\.?[^\.]+\.\w+ \+= new [A-Za-z0-9_\.]+EventHandler\(') 
      { 
-         # On récupére le nom du composant et le nom de l'événement dans $T[1],$T[2]
+         # On rÃ©cupÃ©re le nom du composant et le nom de l'Ã©vÃ©nement dans $T[1],$T[2]
         $T=$Ligne.Split(@('.','+'))
-         #On ajoute le scriptblock gérant l'événement
+         #On ajoute le scriptblock gÃ©rant l'Ã©vÃ©nement
         [void]$LinesNewScript.Add( (Add-EventComponent $T[1] $T[2].Trim()) )
         Continue
      }
         #Gestion d'un event de la form : this.Load += new System.EventHandler(this.Form1_Load);
      elseif ($Ligne -match '^this\.?\w+ \+= new [A-Za-z0-9_\.]+EventHandler\(') 
      {
-        # On récupére le nom du composant et le nom de l'événement dans $T[1],$T[2]
+        # On rÃ©cupÃ©re le nom du composant et le nom de l'Ã©vÃ©nement dans $T[1],$T[2]
        $T=$Ligne.Split(@('.','+'))
        $EventName=$T[1].Trim()
-        #On génère par défaut ces deux événements
+        #On gÃ©nÃ¨re par dÃ©faut ces deux Ã©vÃ©nements
        if (($EventName -eq "FormClosing") -or ($EventName -eq "Shown")) {continue}
-        #On ajoute le scriptblock gérant l'événement
+        #On ajoute le scriptblock gÃ©rant l'Ã©vÃ©nement
        [void]$LinesNewScript.Add( (Add-EventComponent $FormName $EventName) )
        Continue
      }
         
-  # ------------ Traitement des lignes. Toutes ne sont pas encore supportées, i.e. correctement analysées
+  # ------------ Traitement des lignes. Toutes ne sont pas encore supportÃ©es, i.e. correctement analysÃ©es
   
-       #Recherche l'affectation d'une valeur d'énumération par une capture
-       # Trois groupe: 1- Les caractères à gauche de '= ', i.e. en début de ligne
-       #				       2- Les caractères à droite de '= ' et avant le dernier '.'
-       #				       3- Les caractères après le dernier '.'
-       # Pour renforcer la reconnaissance on opére avant la suppression du ';' ( fin d'instruction C#)
+       #Recherche l'affectation d'une valeur d'Ã©numÃ©ration par une capture
+       # Trois groupe: 1- Les caractÃ¨res Ã  gauche de '= ', i.e. en dÃ©but de ligne
+       #				       2- Les caractÃ¨res Ã  droite de '= ' et avant le dernier '.'
+       #				       3- Les caractÃ¨res aprÃ¨s le dernier '.'
+       # Pour renforcer la reconnaissance on opÃ©re avant la suppression du ';' ( fin d'instruction C#)
   
        # On ne modifie pas les lignes du type :
        #       this.bindingNavigator1.AddNewItem = this.bindingNavigatorAddNewItem;
@@ -590,14 +589,14 @@ Function $FunctionName {
       # Suppression du token C# de fin de ligne 
      $Ligne = $Ligne -replace '\s*;\s*$',''
      
-      # Suppression du token d'appel de méthode. ATTENTION. Utile uniquement pour les constructeurs !
+      # Suppression du token d'appel de mÃ©thode. ATTENTION. Utile uniquement pour les constructeurs !
      $Ligne = $Ligne -replace "\(\)$",''
   
-      # Les lignes commentées le restent et le traitement de la ligne courante se poursuit
+      # Les lignes commentÃ©es le restent et le traitement de la ligne courante se poursuit
      $Ligne = $Ligne -replace "^//",'#'
       
-      # Remplacement des types boolean par les variables dédiées
-      #Pour une affectation ou dans un appel de méthode 
+      # Remplacement des types boolean par les variables dÃ©diÃ©es
+      #Pour une affectation ou dans un appel de mÃ©thode 
      $Ligne = $Ligne -replace " true",' $true'
      $Ligne = $Ligne -replace " false",' $false'
       
@@ -607,21 +606,22 @@ Function $FunctionName {
       #Pour une affectation uniquement
       $Ligne = $Ligne -replace ' = this$'," = `$$FormName"
   
-      # Remplacement du format de typage des données
+      # Remplacement du format de typage des donnÃ©es
       #PB A quoi cela correspond-il ? si on remplace ici pb par la suite sur certaines lignes
       # A priori le traitement n'est pas complet et fausse les analyses suivantes.
       #$Ligne = $Ligne -replace "\((\w+\.\w+\.\w+\.\w+)\)", '[$1]' 
        
        # Remplacement, dans le cadre du remplissage d'objets avec des valeurs, de 
-       # la chaîne "new XXXXXX[] {" 
+       # la chaÃ®ne "new XXXXXX[] {" 
      $Ligne = $Ligne -replace "new [A-Za-z0-9_\.]+\[\] \{",'@('
       # Tjs dans le cadre du remplissage de listbox, remplacement de "})" par "))"
      $Ligne = $Ligne -replace "}\)$",'))'
-  
-  #TODO : BUG dans la reconnaissance du pattern. Décomposer la ligne qui peut être complexe
-  #				  Saisie : "Test : &é"''((--èè_çà)=+-*/.$¨^%,?;:§~#{'[(-|è`_\ç^à@)]=}"
-  #				  C#     : "Test : &Ã©\"\'\'((--Ã¨Ã¨_Ã§Ã )=+-*/.$Â¨^%,?;:Â§~#{\'[(-|Ã¨`_\\Ã§^Ã @)]=}"});
-  #				  PS     : "Test : &é\"\'\'((--èè_çà)=+-*/.$¨^%,?;:§~#{\'[(--borè`_\\ç^à@)]=}"))
+     
+#<DEFINE %DEBUG%>
+  #TODO : BUG dans la reconnaissance du pattern. DÃ©composer la ligne qui peut Ãªtre complexe
+  #				  Saisie : "Test : &Ã©"''((--Ã¨Ã¨_Ã§Ã )=+-*/.$Â¨^%,?;:Â§~#{'[(-|Ã¨`_\Ã§^Ã @)]=}"
+  #				  C#     : "Test : &ÃƒÂ©\"\'\'((--ÃƒÂ¨ÃƒÂ¨_ÃƒÂ§ÃƒÂ )=+-*/.$Ã‚Â¨^%,?;:Ã‚Â§~#{\'[(-|ÃƒÂ¨`_\\ÃƒÂ§^ÃƒÂ @)]=}"});
+  #				  PS     : "Test : &Ã©\"\'\'((--Ã¨Ã¨_Ã§Ã )=+-*/.$Â¨^%,?;:Â§~#{\'[(--borÃ¨`_\\Ã§^Ã @)]=}"))
   
        # si on trouve \'  entre 2 guillemets on le remplace par '
        # si on trouve \" entre 2 guillemets on le remplace par "
@@ -629,11 +629,11 @@ Function $FunctionName {
        # si on trouve | entre 2 guillemets on ne le remplace pas
        # si on trouve || et qu'il n'est pas entre 2 guillemets on le remplace par -or (OR logique)
   
-       # BUG : Remplacement de l'opérateur binaire OR
-       #ATTENTION ne pas le modifier avant l'analyse des lignes de déclaration de fontes !!!
+       # BUG : Remplacement de l'opÃ©rateur binaire OR
+       #ATTENTION ne pas le modifier avant l'analyse des lignes de dÃ©claration de fontes !!!
       #$ligne = $ligne.replace("|", '-bor')
-  
-       # Recherche dans les lignes commentées le nom de la form, 
+#<UNDEF %DEBUG%> 
+       # Recherche dans les lignes commentÃ©es le nom de la form, 
        # le nombre d'espace entre # et Form1 importe peu mais il doit y en avoir au moins un.
       if ($Ligne -match "^#\s+" + $FormName) 
       {
@@ -650,7 +650,7 @@ Function $FunctionName {
          Continue 
       }
       if ($IsTraiteMethodesForm)
-      {   # On modifie les chaînes débutant par "this"
+      {   # On modifie les chaÃ®nes dÃ©butant par "this"
           # Ex : "this.Controls.Add(this.maskedTextBox1) devient "$Form1.Controls.Add(this.maskedTextBox1)" 
          $Ligne = $Ligne -replace "^this.(.*)", "`$$FormName.`$1"
           # Ensuite on remplace toutes les occurences de "this". 
@@ -659,21 +659,22 @@ Function $FunctionName {
          { $ligne = $Ligne.replace('this.', '$') }
       }
       else
-      {   # On modifie les chaînes débutant par "this" qui opérent sur les composants
+      {   # On modifie les chaÃ®nes dÃ©butant par "this" qui opÃ©rent sur les composants
           # ,on remplace toutes les occurences de "this". 
           # Ex : "this.treeView1.TabIndex = 18" devient "$treeView1.TabIndex = 18" 
          if ($Ligne.StartsWith('this.')) 
          { $Ligne = $Ligne.replace('this.','$') }
       }
-      #Recherche this en tant que premier paramètre d'une méthode
+      #Recherche this en tant que premier paramÃ¨tre d'une mÃ©thode
       #  $AddonFrm.toolTip1.SetToolTip(this, "Retrieve dependencies of a script")
-      # transformé en :
+      # transformÃ© en :
       #  $toolTip1.SetToolTip($AddonFrm, "Retrieve dependencies of a script")
       $Ligne = $Ligne -replace '^(\$.*?)\.(.*?\.SetToolTip)\(this,(.*)$',"`$$`$2(`$$FormName,`$3"
         
         #Remplace le token d'appel d'un constructeur d'instance des composants graphiques. 
         # this.PanelMainFill = new System.Windows.Forms.Panel();
       $Ligne = $Ligne.replace(' new ', ' New-Object ')
+#<DEFINE %DEBUG%>      
        #Todo BUG
        #     this.tableLayoutPanelFill.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
        #     this.tableLayoutPanelFill.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
@@ -681,7 +682,7 @@ Function $FunctionName {
        #     $tableLayoutPanelFill.ColumnStyles.Add(New-Object System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F))
        #
        #projet : ConvertForm\TestsWinform\Test5Panel\FrmTest5PanelTableLayoutPanel.Designer.cs
-
+#<UNDEF %DEBUG%>   
       $ligne = $Ligne.replace('(new ', '(New-Object ')
       
       $Ligne = $Ligne -replace "(^.*= New-Object System.Drawing.SizeF\()([0-9]+)F, ([0-9]+)F\)$", '$1$2, $3)'
@@ -696,15 +697,16 @@ Function $FunctionName {
         # Transforme : this.pictureBox1.Image = global::TestFrm.Properties.Resources.Koala;
         #  en        : pictureBox1.Image = $PropertiesResources["Koala"]
         #
-        # Koala est le nom d'une clé du fichier resx du projet : 
-        # TestFrm.Properties est un espace de nom, .Resources est un nom de classe et Koala une propriété statique
-        # les fichiers associée :
+        # Koala est le nom d'une clÃ© du fichier resx du projet : 
+        # TestFrm.Properties est un espace de nom, .Resources est un nom de classe et Koala une propriÃ©tÃ© statique
+        # les fichiers associÃ©e :
         #  Projet\Frm\Properties\Resources.Designer.cs
         #  Projet\Frm\Properties\Resources.resx
        $nl='{0}= $PropertiesResources["{1}"]' -F $Matches.Object,$Matches.Key
        [void]$LinesNewScript.Add($nl)
        continue
       }
+#<DEFINE %DEBUG%>  
   # Todo BUG
 # ConvertForm\TestsWinform\Test14BoitesDeDialogue\FrmTest14BoitesDeDialogue.Designer.cs
 #       #
@@ -733,70 +735,70 @@ Function $FunctionName {
   #
   #Projet: ConvertForm\TestsWinform\Test19Localisation\FrmMain.Designer.cs
   #
-  # révision de la gestion des ressources
+  # rÃ©vision de la gestion des ressources
   #       Write-host $ligne
   #        $Ligne = $Ligne -replace "^(.*)= \(\((.*)\)\(resources.GetObject\((.*)\)\)\)$", '$1= [$2] $Resources[$3]'
   #        Write-host $ligne
-  #          #$$$2 échappe le caractère dollar dans une regex
+  #          #$$$2 Ã©chappe le caractÃ¨re dollar dans une regex
   #        $Ligne = $Ligne -replace "^(.*)\(this.(.*), resources.GetString\((.*)\)\)$", '$1($$$2, $Resources[$3])'
   #        Write-host $ligne
-          
+#<UNDEF %DEBUG%>            
   
-  # -------  Traite les propriétés .Font
+  # -------  Traite les propriÃ©tÃ©s .Font
       $MatchTmp =[Regex]::Match($Ligne,'^(.*)(\.Font =.*System.Drawing.Font\()(.*)\)$')   
       if ($MatchTmp.Success -eq $true)
       { 
-          #On traite la partie paramètres d'une déclaration 
+          #On traite la partie paramÃ¨tres d'une dÃ©claration 
          $ParametresFont = Select-PropertyFONT $MatchTmp
          $ligne = ConvertTo-Line $MatchTmp (1,2) $ParametresFont
          [void]$LinesNewScript.Add($ligne+')')
          continue
       }
   
-  # -------  Traite les propriétés .Anchor
-     #la ligne suivante est traité précédement et ne match pas
+  # -------  Traite les propriÃ©tÃ©s .Anchor
+     #la ligne suivante est traitÃ© prÃ©cÃ©dement et ne match pas
      # this.button2.Anchor = System.Windows.Forms.AnchorStyles.None;
      #$button5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)| System.Windows.Forms.AnchorStyles.Right)))
      $MatchTmp =[Regex]::Match($Ligne,'^(.*)(\.Anchor =.*System.Windows.Forms.AnchorStyles\))(.*)\)$')   
       if ($MatchTmp.Success -eq $true)
       { 
-          #On traite la partie paramètres d'une déclaration 
+          #On traite la partie paramÃ¨tres d'une dÃ©claration 
          $ParametresAnchor = Select-PropertyANCHOR $MatchTmp
          $Ligne = ConvertTo-Line $MatchTmp (1) $ParametresAnchor
-          #todo la function ConvertTo-Line est à revoir. Inadapté dans ce cas
+          #todo la function ConvertTo-Line est Ã  revoir. InadaptÃ© dans ce cas
           #$button1[System.Windows.Forms.AnchorStyles]"Top,Bottom,Left"
          $ligne = $ligne.replace('[System.','.Anchor = [System.')
          [void]$LinesNewScript.Add($Ligne)
          continue
       }
   
-  # -------  Traite les propriétés .ShortcutKeys
+  # -------  Traite les propriÃ©tÃ©s .ShortcutKeys
      #this.toolStripMenuItem2.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.A)));
      $MatchTmp =[Regex]::Match($Ligne,'^(.*)(\.ShortcutKeys = \(\(System.Windows.Forms.Keys\))(.*)\)$')   
       if ($MatchTmp.Success -eq $true)
       { 
-          #On traite la partie paramètres d'une déclaration 
+          #On traite la partie paramÃ¨tres d'une dÃ©claration 
          $ParametresShortcutKeys = Select-PropertyShortcutKeys $MatchTmp
          $Ligne = ConvertTo-Line $MatchTmp (1) $ParametresShortcutKeys
-          #todo la function ConvertTo-Line est à revoir. Inadapté dans ce cas
+          #todo la function ConvertTo-Line est Ã  revoir. InadaptÃ© dans ce cas
           #$button1[System.Windows.Forms.AnchorStyles]"Top,Bottom,Left"
          $ligne = $ligne.replace('[System.','.ShortcutKeys = [System.')
          [void]$LinesNewScript.Add($Ligne)
          continue
       }
   
-  # -------  Traite les appels de la méthode FormArgb
+  # -------  Traite les appels de la mÃ©thode FormArgb
       $MatchTmp =[Regex]::Match($Ligne,'^(.*)( = System.Drawing.Color.FromArgb\()(.*)\)$') 
       if ($MatchTmp.Success -eq $true)
       { 
-          #On traite la partie paramétres d'une déclaration 
+          #On traite la partie paramÃ©tres d'une dÃ©claration 
          $ParametresRGB = Select-ParameterRGB $MatchTmp
          $Ligne = ConvertTo-Line $MatchTmp (1,2) $ParametresRGB
          $Ligne = $Ligne.Replace('System.Drawing.Color.FromArgb','[System.Drawing.Color]::FromArgb')
          [void]$LinesNewScript.Add($Ligne+')')
          continue
       }                                                                 
-   # -------  Traite les appels de méthode statique
+   # -------  Traite les appels de mÃ©thode statique
      #System.Parse("-00:00:01");
      #System.T1.T2.T3.Parse("-00:00:01");
      # ' this.directorySearcher1.ClientTimeout = System.TimeSpan.Parse("-00:00:01");'
@@ -805,11 +807,11 @@ Function $FunctionName {
         if ($Ligne -match '^(?<Var>.*?) = (?<Class>.*)\.(?<Method>\w+)\((?<Parameter>.*)\)$')
         {
           $Ligne = '{0} = [{1}]::{2}({3})' -F $Matches.Var,$Matches.Class,$Matches.Method,$Matches.Parameter
-          Write-Debug "Change méthode statique : $Ligne"
+          Write-Debug "Change mÃ©thode statique : $Ligne"
         }
         else { Write-Debug "Ne match pas  : $Ligne"}
      }
-     #else { Write-Debug "N'est pas une méthode statique : $Ligne"}
+     #else { Write-Debug "N'est pas une mÃ©thode statique : $Ligne"}
   
      Write-debug '---------------------'      
       [void]$LinesNewScript.Add($Ligne)
@@ -817,23 +819,23 @@ Function $FunctionName {
 
   if ($DebugPreference -ne "SilentlyContinue")
   { $BPLigneWrite | Remove-PSBreakpoint }
-  Write-Debug "Conversion du code CSharp effectuée."
+  Write-Debug "Conversion du code CSharp effectuÃ©e."
   
   [void]$LinesNewScript.Add( (Add-SpecialEventForm $FormName -HideConsole:$HideConsole))
    
-  Write-Debug "[Ajout Code] Appel à la méthode ShowDialog/Dispose"
+  Write-Debug "[Ajout Code] Appel Ã  la mÃ©thode ShowDialog/Dispose"
   [void]$LinesNewScript.Add("`$ModalResult=`$$FormName.ShowDialog()")
 
   If ($IsUsedResources)
   {  
-    Write-Debug "[Ajout Code]Libération des ressources"
+    Write-Debug "[Ajout Code]LibÃ©ration des ressources"
     [void]$LinesNewScript.Add($ConvertFormMsgs.DisposeResources)
     [void]$LinesNewScript.Add('$Reader.Close()') 
   }
   
   If ($IsUsedPropertiesResources)
   {  
-    Write-Debug "[Ajout Code]Libération des ressources des propriétés du projet"
+    Write-Debug "[Ajout Code]LibÃ©ration des ressources des propriÃ©tÃ©s du projet"
     [void]$LinesNewScript.Add('$PropertiesReader.Close()') 
   }
 
@@ -878,7 +880,7 @@ Function $FunctionName {
       else
       { Out-File -InputObject $LinesNewScript -FilePath $ProjectPaths.Destination -Encoding $Encoding -Width 999 }
    } catch {
-       #[System.UnauthorizedAccessException] #fichier protégé en écriture
+       #[System.UnauthorizedAccessException] #fichier protÃ©gÃ© en Ã©criture
        #[System.IO.IOException] #Espace insuffisant sur le disque.
       $PSCmdlet.WriteError(
         (New-Object System.Management.Automation.ErrorRecord (           

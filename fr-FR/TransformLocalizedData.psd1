@@ -12,5 +12,8 @@
  AddEventComponent=L'évènement $ComponentName.Add_$EventName n'est pas implémenté. 
  ManageResourcesComment=#Gestion du fichier des ressources
  CreateComponentComment=# Création des composants
-'@ 
+'@
+
+ 
+
 

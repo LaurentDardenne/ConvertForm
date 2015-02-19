@@ -9,7 +9,6 @@
  PathNotFound=Le répertoire n'existe pas : '{0}'  
  
  BeginAnalyze=Démarrage de l'analyse du fichier '{0}'
- ComponentRequireSTA=Le composant suivant ou une de ces fonctionnalités, requiert le modèle de thread STA (Single Thread Apartment)). Réessayez avec le paramètre -STA.
  InitializeComponentNotFound=La méthode InitializeComponent() est introuvable dans le fichier {0}. La conversion ne peut s'effectuer.
  
  DesignerNameNotFound=Vérifiez que le nom du fichier source est bien celui généré par le designer de Visual Studio.
@@ -26,9 +25,8 @@
  
  ConversionComplete=Conversion terminée : '{0}' 
  
- ParameterHideConsoleNotNecessary=Si vous convertissez une form secondaire l'usage du switch -HideConsole n'est pas nécessaire. Si c'est le cas, réexécutez votre appel sans préciser ce switch. 
- ParameterStringEmpty=Le paramètre '{0}' ne peut être une chaîne vide.
  ParameterIsExclusif=Utilisez soit le paramètre 'Destination', soit le paramètre 'DestinationLiteral', mais pas les deux en même temps.
+ ParameterIsNotAllow=Le paramètre 'Secondary' indique la conversion d'un formulaire secondaire, le paramètre 'HideConsole' ne peut être précisé que lors d'une conversion d'un formulaire primaire.
  AddSTARequirement=Ajout du contrôle du modéle de thread STA. Raison : {0}
 
  LoadingAssemblies=# Chargement des assemblies externes

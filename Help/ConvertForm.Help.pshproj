@@ -46,8 +46,8 @@ Cet appel peut également générer les fichiers suivants :
         <CommandParameterSetInfo2 Name="LiteralPath" Params="LiteralPath Destination DestinationLiteral Encoding Force HideConsole asFunction Secondary Passthru Verbose Debug ErrorAction WarningAction ErrorVariable WarningVariable OutVariable OutBuffer PipelineVariable" />
       </ParamSets>
       <Syntax>
-        <string>Convert-Form [-Path] &lt;String&gt; [[-Destination] &lt;PSObject&gt;] [[-DestinationLiteral] &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-Force] [-HideConsole] [-asFunction] [-Secondary] [-Passthru]</string>
-        <string>Convert-Form [-LiteralPath] &lt;String&gt; [[-Destination] &lt;PSObject&gt;] [[-DestinationLiteral] &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-Force] [-HideConsole] [-asFunction] [-Secondary] [-Passthru]</string>
+        <string>Convert-Form [-Path] &lt;String&gt; [-Destination &lt;PSObject&gt;] [-DestinationLiteral &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-Force] [-HideConsole] [-asFunction] [-Secondary] [-Passthru]</string>
+        <string>Convert-Form [-LiteralPath] &lt;String&gt; [-Destination &lt;PSObject&gt;] [-DestinationLiteral &lt;PSObject&gt;] [[-Encoding] &lt;String&gt; {unknown | string | unicode | bigendianunicode | utf8 | utf7 | utf32 | ascii | default | oem} ] [-Force] [-HideConsole] [-asFunction] [-Secondary] [-Passthru]</string>
       </Syntax>
       <Parameters>
         <ParameterDescription type="String" varLen="false" required="true" dynamic="false" pipeRemaining="false" pipe="true" pipeProp="false" isPos="true" pos="0" globbing="true">
@@ -58,10 +58,11 @@ Cet appel peut également générer les fichiers suivants :
             <string>System.Management.Automation.ValidateNotNullOrEmptyAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>Spécifie le chemin d’accès d'un fichier Designer.cs. Les caractères génériques sont autorisés.</Description>
+          <Description>Spécifie le chemin d’accès d'un fichier 'Designer.cs' associé à un projet Winform de Visual Studio.
+Les caractères génériques sont autorisés.</Description>
           <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription type="PSObject" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="true" isPos="true" pos="1" globbing="true">
+        <ParameterDescription type="PSObject" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="true" isPos="false" pos="named" globbing="true">
           <Name>Destination</Name>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
@@ -72,7 +73,7 @@ Cet appel peut également générer les fichiers suivants :
 Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
           <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription type="PSObject" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="true" isPos="true" pos="1" globbing="false">
+        <ParameterDescription type="PSObject" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="true" isPos="false" pos="named" globbing="false">
           <Name>DestinationLiteral</Name>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
@@ -85,7 +86,7 @@ Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre
 Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
           <DefaultValue />
         </ParameterDescription>
-        <ParameterDescription type="String" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="true" pos="2" globbing="false">
+        <ParameterDescription type="String" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="true" pos="1" globbing="false">
           <Name>Encoding</Name>
           <Attributes>
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
@@ -103,7 +104,8 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>La présence de ce paramètre évite une demande de confirmation si le fichier cible .ps1 existe déjà.</Description>
+          <Description>La présence de ce paramètre évite une demande de confirmation si le fichier cible .ps1 existe déjà.
+Attention, aucune sauvegarde du fichier n'est créé.</Description>
           <DefaultValue />
         </ParameterDescription>
         <ParameterDescription type="SwitchParameter" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="false" pos="named" globbing="false">
@@ -113,7 +115,7 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
             <string>System.Management.Automation.ArgumentTypeConverterAttribute</string>
           </Attributes>
           <Aliases />
-          <Description>Masque la console lors de l'appel à la méthode ShowDialog() du formulaire principal.</Description>
+          <Description>Insère du code masquant la console lors de l'appel à la méthode ShowDialog() du formulaire principal.</Description>
           <DefaultValue />
         </ParameterDescription>
         <ParameterDescription type="SwitchParameter" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="false" pos="named" globbing="false">

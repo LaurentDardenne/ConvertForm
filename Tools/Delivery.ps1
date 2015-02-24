@@ -11,9 +11,9 @@ Properties {
  #charge la fonction dans la portée de PSake
 include "$ConvertFormTools\New-FileNameTimeStamped.ps1"
 
-Task default -Depends Delivery ,ValideParameterSet #,TestBomFinal
+Task default -Depends Build, ValideParameterSet, TestBomFinal, Delivery
 
-Task Delivery -Depends Clean, RemoveConditionnal { #,FindTodo {
+Task Build -Depends Clean, RemoveConditionnal { #,FindTodo {
 #Recopie les fichiers dans le répertoire de livraison  
 $VerbosePreference='Continue'
 #Doc xml localisée
@@ -57,7 +57,7 @@ $VerbosePreference='Continue'
       
 #Other 
    Copy "$ConvertFormVcs\Revisions.txt" "$ConvertFormLivraison"
-} #Delivery
+} #Build
 
 Task RemoveConditionnal -Depend TestLocalizedData {
 #Traite les pseudo directives de parsing conditionnelle
@@ -223,3 +223,16 @@ Task FindTodo {
   else
   {Write-Warning "Config DEBUG : tâche inutile" } 
 } #FindTodo
+
+Task Delivery {
+  $ModulePath=($env:PSModulePath -split ';')[0] + $ConvertFormProjectName 
+  try {
+   if (Test-Path $ModulePath)
+   { Remove-Item -LiteralPath $ModulePath -Recurse -Force }
+   Md $ModulePath > $null
+   Copy-item -Path $ConvertFormLivraison\* -Destination $ModulePath -Recurse -Force -Exclude ConvertFormSetup.* 
+  }
+  catch {
+   Write-error "[$ConvertFormProjectName] livraison du module impossible : $_ "        
+  }   
+} #Delivery

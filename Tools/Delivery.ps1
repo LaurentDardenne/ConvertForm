@@ -18,7 +18,9 @@ Task Delivery -Depends Clean, RemoveConditionnal { #,FindTodo {
 $VerbosePreference='Continue'
 #Doc xml localisée
    #US
-   #Copy "$ConvertFormVcs\en-US\PsIonicLocalizedData.psd1" "$ConvertFormLivraison\PsIonic\en-US\PsIonicLocalizedData.psd1" 
+   Copy "$ConvertFormVcs\en-US\ConvertFormLocalizedData.psd1" "$ConvertFormLivraison\en-US"
+   Copy "$ConvertFormVcs\en-US\TransformLocalizedData.psd1" "$ConvertFormLivraison\en-US"
+ 
 
   #Fr 
    Copy "$ConvertFormVcs\fr-FR\ConvertForm.Help.xml" "$ConvertFormLivraison\fr-FR"
@@ -50,6 +52,7 @@ $VerbosePreference='Continue'
    Copy "$ConvertFormVcs\ConvertForm.psd1" "$ConvertFormLivraison" 
 
 #Tools
+   Copy "$ConvertFormVcs\Resgen.Exe" "$ConvertFormLivraison"  
    Copy "$ConvertFormVcs\Tools\Add-Header.ps1" "$ConvertFormLivraison\Tools"  
       
 #Other 

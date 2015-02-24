@@ -162,7 +162,7 @@ Task TestBOMFinal {
 
 #Validation de l'encodage des fichiers APRES la génération  
   
-  Write-Host "Validation de l'encodage des fichiers du répertoire : $ConvertFormLivraison"
+  Write-Host "Validation de l'encodage des fichiers du répertoire de livraison : $ConvertFormLivraison"
   $InvalidFiles=@(&"$ConvertFormTools\Test-BOMFile.ps1" $ConvertFormLivraison)
   if ($InvalidFiles.Count -ne 0)
   { 

@@ -1,5 +1,5 @@
 ﻿ConvertFrom-StringData @'
- FileSystemPathRequired=Le chemin doit pointer sur le FileSystem : {0}
+ FileSystemPathRequired=The path must be on file system : {0}
  FileSystemPathRequiredForCurrentLocation=L'usage de chemin relatif, nécessite que le chemin courant pointe sur le système de fichier : {0}
  GlobbingUnsupported=Le globbing n'est pas supporté pour ce paramètre : {0} 
  ParameterMustBeAfile=Le paramètre doit référencer un nom de fichier et pas un nom de répertoire : {0}
@@ -27,7 +27,7 @@
  
  ParameterIsExclusif=Utilisez soit le paramètre 'Destination', soit le paramètre 'DestinationLiteral', mais pas les deux en même temps.
  ParameterIsNotAllow=Le paramètre 'Secondary' indique la conversion d'un formulaire secondaire, le paramètre 'HideConsole' ne peut être précisé que lors d'une conversion d'un formulaire primaire.
- AddSTARequirement=Ajout du contrôle du modéle de thread STA. Raison : {0}
+ AddSTARequirement=Ajout du contrôle du modèle de thread STA. Raison : {0}
 
  LoadingAssemblies=# Chargement des assemblies externes
  DisposeResources=# Libération des ressources

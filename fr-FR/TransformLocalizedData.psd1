@@ -10,7 +10,7 @@
  CreateResourceFile=Génération du fichier de ressources {0}
  NeedSTAthreading=Le script courant nécessite que la session Powershell soit dans le modèle de thread STA (Single Thread Apartment).
  AddEventComponent=L'évènement $ComponentName.Add_$EventName n'est pas implémenté. 
- ManageResourcesComment=#Gestion du fichier des ressources
+ ManageResourcesComment=# Gestion du fichier des ressources
  CreateComponentComment=# Création des composants
 '@
 

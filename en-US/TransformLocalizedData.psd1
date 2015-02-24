@@ -1,16 +1,17 @@
 ﻿ConvertFrom-StringData @'
- ManageResourcesError=Le fichier de ressources n'existe pas : $ResourcesPath
- CompileResource=Compile les ressources.
- SourcePath=Le fichier source : {0}
- DestinationPath=Le fichier destination : {0}
- ResgenNotFound=Le programme générant les ressources est introuvable : {0}
- ResourceFileNotFound=Le fichier de ressources est introuvable : {0} 
- CreateResourceFileError=Erreur ({0}) lors de la génération du fichier de ressources. Consultez le fichier de log {1}
- CreateLogFileError=Génération du fichier de log impossible : {0} 
- CreateResourceFile=Génération du fichier de ressources {0}
- NeedSTAthreading=Le script courant nécessite que la session Powershell soit dans le modèle de thread STA (Single Thread Apartment).
- AddEventComponent=L'évènement $ComponentName.Add_$EventName n'est pas implémenté. 
- ManageResourcesComment=#Gestion du fichier des ressources
- CreateComponentComment=# Création des composants
+ ManageResourcesError=The resource file do not exist : $ResourcesPath
+ CompileResource=Compile the ressources.
+ SourcePath=The source file : {0}
+ DestinationPath=The destination file : {0}
+ ResgenNotFound=The resources's program is not found: {0}
+ ResourceFileNotFound=The resource file is not found : {0} 
+ CreateResourceFileError=Error ({0}) during the generation of the resource file. Check the log file {1}
+ CreateLogFileError=The generation of the log file is impossible : {0} 
+ CreateResourceFile=Generation of the resource file {0}
+
+ NeedSTAthreading=The current script requires that the Powershell session must be run in the threading model STA (Single Thread Apartment).
+ AddEventComponent=The event handler $ComponentName.Add_$EventName is not implemented. 
+ ManageResourcesComment=# Management of the resource File.
+ CreateComponentComment=# Creation of the components.
 '@ 
 

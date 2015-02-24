@@ -74,7 +74,7 @@ try {
 }
 
 function Convert-Form {
-# .ExternalHelp ConvertForm-Help.xml           
+# .ExternalHelp ConvertForm.Help.xml           
   [CmdletBinding(DefaultParameterSetName="Path")] 
   [OutputType([System.String])] 
  Param(
@@ -911,7 +911,7 @@ Function $FunctionName {
 
 
 function Test-PSScript {  
-# .ExternalHelp ConvertForm-Help.xml           
+# .ExternalHelp ConvertForm.Help.xml           
   [CmdletBinding()] 
     [OutputType([System.String])] 
    param(                                

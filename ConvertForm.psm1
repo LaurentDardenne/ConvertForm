@@ -89,13 +89,13 @@ function Convert-Form {
    [string]$LiteralPath,
        
        #On attend un nom de répertoire
-      [parameter(position=1,ValueFromPipelineByPropertyName=$True, ParameterSetName="Path")]
+      [parameter(ValueFromPipelineByPropertyName=$True)]
     [PSObject] $Destination, #todo teste delayed SB    
     
-      [parameter(position=1,ValueFromPipelineByPropertyName=$True, ParameterSetName="LiteralPath")]
+      [parameter(ValueFromPipelineByPropertyName=$True)]
     [PSObject] $DestinationLiteral, #todo teste delayed SB     
     
-     [Parameter(Position=2,Mandatory=$false)]
+     [Parameter(Position=1,Mandatory=$false)]
      [ValidateSet("unknown", "string", "unicode", "bigendianunicode", "utf8", "utf7", "utf32", "ascii", "default", "oem")]
     [string] $Encoding='default',
     

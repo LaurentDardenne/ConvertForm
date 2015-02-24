@@ -2,7 +2,7 @@
 $DesignerFileExistingLiteralpath ="$($ConvertForm.RepositoryLocation)\TestsWinform\Test21LiteralPath[AG]Naming\Frm[AG].Designer.cs"
 
 Describe "Valid path parameters" {
-   Context "-Path (..) : Le chemin doit pointer sur le FileSystem" {
+   Context "-Path (..) : Le chemin doit pointer sur le FileSystem (relative path)" {
      It "fails" {
        { 
           Push-Location hklm:\
@@ -118,7 +118,7 @@ Describe "Valid path parameters" {
      }
    }
 
-   Context "-Path : Le chemin doit pointer sur le FileSystem" {
+   Context "-Path : Le chemin doit pointer sur le FileSystem (fullpath)" {
      It "fails" {
        { Convert-Form -Path 'Hklm:\Software\MainForm.Designer.cs' -Destination .} | Should Throw
      }

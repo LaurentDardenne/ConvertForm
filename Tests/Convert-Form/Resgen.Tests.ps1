@@ -5,14 +5,15 @@ $DestinationDirectory= "$TestDirectory\Test3Menus"
 Describe "Valid Resgen errors" {
     It "Resgen.exe not found" {
       try {
-      Rename-item "$($ConvertForm.RepositoryLocation)\ResGen.exe" "$($ConvertForm.RepositoryLocation)\ResGen.exe.test" 
+      Rename-item "$ConvertFormLivraison\ResGen.exe" "$ConvertFormLivraison\ResGen.exe.test"  
       { 
        $ErrorActionPreference='Stop' 
         Convert-Form -Path $Designer -Destination $DestinationDirectory -Force 
        $ErrorActionPreference='Continue'  
       } | Should Throw
       } finally {
-        Rename-item "$($ConvertForm.RepositoryLocation)\ResGen.exe.test" "$($ConvertForm.RepositoryLocation)\ResGen.exe"
+        $ErrorActionPreference='Continue'  
+        Rename-item "$ConvertFormLivraison\ResGen.exe.test" "$ConvertFormLivraison\ResGen.exe"
       }         
     }
 

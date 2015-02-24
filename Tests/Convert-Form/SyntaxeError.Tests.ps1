@@ -39,6 +39,12 @@ Describe "Validates the conversion of all projects" {
     'FrmMain.ps1',
     'FrmTest14BoitesDeDialogue.ps1'
    )
+   
+   #Erreur 'Convert-Form : Le nom de la Form est introuvable dans la méthode InitializeComponent() du fichier'
+   # pour ces 2 fichiers : 
+   # 'G:\PS\ConvertForm\TestsWinform\TestNotWinFormFile\NoFormName.Designer.cs'
+   # 'G:\PS\ConvertForm\TestsWinform\Test20ExternalReferences\Form1.Designer.cs'
+   
    cd $ConvertForm.RepositoryLocation
  
    # Recherche tous les fichiers Winform d'une arborescence
@@ -80,7 +86,7 @@ Describe "Validates the conversion of all projects" {
   
    $List=$Error|
            Where {$_.CategoryInfo.Category -eq 'SyntaxError'}|
-           Foreach {$_.CategoryInfo.TargetName}|
+           Foreach {$_.CategoryInfo.TargetName;Write-Warning "Projet en erreur : $($_.CategoryInfo.TargetName)"}|
            split-path -Leaf
 
     $Result = ValidateExpectedContent $List $ExpectedContent

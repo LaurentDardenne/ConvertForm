@@ -18,5 +18,10 @@ md $TestDirectory -ea SilentlyContinue >$null
 $TestNomDeFichier="$TestDirectory\Test.txt"
 "Test Fichier" > $TestNomDeFichier
 
-cd $ConvertForm.Tests
-Write-host "Invoke-Pester" 
+cd $ConvertFormTests
+ 
+ #Suppose la construction préalable via ..\Tools\Build.Ps1
+Import-Module "$ConvertFormLivraison\ConvertForm.psd1" 
+
+Set-Location $ConvertFormTests
+Invoke-Pester 

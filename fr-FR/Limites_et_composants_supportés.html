@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <title>Limites et composants supportés</title>
@@ -13,62 +13,41 @@ ul.toc li.heading3 { margin-left: 2em; }
 </style>
 </head>
 <body>
-<h1 id="Limites-et-composants-supportés">Limites et composants supportés<a href="#Limites-et-composants-supportés" class="wiki-anchor">&para;</a></h1>
-
-
-	<ul class="toc"><li class="heading1"><a href="#Limites-et-composants-supportés">Limites et composants supportés</a></li>
-<li class="heading1"><a href="#Composants-supportés">Composants supportés</a></li>
-<li class="heading1"><a href="#Composants-en-erreur">Composants en erreur</a></li>
-<li class="heading1"><a href="#Limitations">Limitations</a></li>
-<li class="heading1"><a href="#Informations">Informations</a></li>
+<h1 id="Limites-et-composants-support&eacute;s">Limites et composants support&eacute;s</h1>
+<ul>
+<li><a href="#Limites-et-composants-support&eacute;s">Limites et composants support&eacute;s</a></li>
+<li><a href="#Composants-support&eacute;s">Composants support&eacute;s</a></li>
+<li><a href="#Composants-en-erreur">Composants en erreur</a></li>
+<li><a href="#Limitations">Limitations</a></li>
+<li><a href="#Informations">Informations</a></li>
 </ul>
-
-
-	<h1 id="Composants-supportés">Composants supportés<a href="#Composants-supportés" class="wiki-anchor">&para;</a></h1>
-
-
-	<p>Composants ne fonctionnant pas nativement sous PowerShell V1.0 :  <br />
--System.Windows.Forms.WebBrowser : <a href="http://blogs.msdn.com/powershell/archive/2007/03/23/thread-apartmentstate-and-powershell-execution-thread.aspx" class="external">Limite de PowerShell v1.0</a><br />
--Le composant BackGroundWorker même raison que pour le WebBrowser. Bien que sa conversion/création ne pose pas de pb.<br />
- Il ne dispose pas de RunSpace pour exécuter des commandes PS. <br />
- En v1 utilisez à la place un 'job'.<br />
- voir <a href="http://www.leeholmes.com/blog/RealtimeSyntaxHighlightingInYourPowerShellConsole.aspx" class="external">Background Jobs and PowerShell</a></p>
-
-
-	<p>Lors de la conversion vous pouvez utiliser le switch -STA, ce qui forcera le traitment à passer outre ce comportement. En revanche vous devez <a href="Convert-Form.html" class="wiki-page">utiliser le cmdlet Invoke-Apartment</a> pour exécuter le code généré.</p>
-
-
-	<h1 id="Composants-en-erreur">Composants en erreur<a href="#Composants-en-erreur" class="wiki-anchor">&para;</a></h1>
-
-
-	<p>-TableLayoutPanel la création imbriquée de composants n'est pas encore supportée<br />
--La reconnaissance de certaines combinaisons de caractères n'est pas prise en compte.</p>
-
-
-	<h1 id="Limitations">Limitations<a href="#Limitations" class="wiki-anchor">&para;</a></h1>
-
-
--L'accessibilité n'est pas supportée (testé)<br />
--Le databinding n'est pas supporté   (non-testé)<br />
--La gestion de références d'assemblies autres que Winform, Drawing,Resources n'est pas supporté (testé).<br />
- voir dans un fichier projet C# Visual Studio, le noeud (fichier XML) :<br />
-<pre>
-  &lt;ItemGroup&gt;
-     &lt;Reference Include="CrystalDecisions.CrystalReports.Engine, Version= ...
+<h1 id="Composants-support&eacute;s">Composants support&eacute;s</h1>
+<p>Certains composants n&eacute;cessite d'utiliser le mod&egrave;le de thread STA :</p>
+<p>&nbsp;-System.Windows.Forms.WebBrowser</p>
+<p>- BackGroundWorker</p>
+<p>Ou certaines fonctionnalit&eacute;s :</p>
+<p>- Drag and Drop</p>
+<p>- AutoCompleteMode</p>
+<p>Utilisez le switch -STA de Powershell.exe.</p>
+<h1 id="Composants-en-erreur">Composants en erreur</h1>
+<p>-TableLayoutPanel la cr&eacute;ation imbriqu&eacute;e de composants n'est pas encore support&eacute;e.</p>
+<p>-La reconnaissance de certaines combinaisons de caract&egrave;res n'est pas prise en compte.</p>
+<p>-La gestion des ressources sur un ToolStripMenuItem.</p>
+<h1 id="Limitations">Limitations</h1>
+<p>-L'accessibilit&eacute; n'est pas support&eacute;e (A tester)</p>
+<p>-Le databinding n'est pas support&eacute; (A tester)</p>
+<p>-Les chemins des r&eacute;f&eacute;rences d'assemblies hors du GAC ne sont pas g&eacute;r&eacute;s. (todo)</p>
+<p>-Gestion des diff&eacute;rente versions de Resgen.exe (A tester)</p>
+<p>-La localisation n'est pas support&eacute; (todo)</p>
+<p>-La gestion automatique de r&eacute;f&eacute;rences d'assemblies autres que Winform, Drawing, Resources n'est pas support&eacute; (test&eacute;).<br /> Voir dans un fichier projet C# Visual Studio, le noeud (fichier XML) :</p>
+<pre>  &lt;ItemGroup&gt;
+     &lt;Reference Include="CrystalDecisions.CrystalReports.Engine, Version= ...<br />
 </pre>
-
-	<h1 id="Informations">Informations<a href="#Informations" class="wiki-anchor">&para;</a></h1>
-
-
-	<p>L'opérateur d'expression régulière <em> -Match</em> n'est pas sensible à la casse lors de la recherche.<br />
-Pensez à nommer chaque composants Winform d'après le nom de votre projet.<br />
-Ex: FrmMainProjet1,FrmSecondaireProjet1</p>
-
-
-	<p>Sous Powershell la déclaration simultanée des événements Activated et DeActivated, réalisée pour VisualStudio, peut amener le formulaire "à boucler". Idem pour la déclaration de l'événement Paint, de la déclaration des événements de la souris, etc.<br />
-Une gestion correcte du code de ces gestionnaires, en lieu et place d'un appel à MessageBox, réglera le problème.</p>
-
-
-	<p>Toutes les fonctions (packages) complémentaires sont chargées en dot source, c'est à dire dans la portée du script. En fin d'exécution elles sont donc automatiquement libérées du provider de variables.</p>
+<h1 id="Informations">Informations</h1>
+<p>L'op&eacute;rateur d'expression r&eacute;guli&egrave;re <em>&nbsp;-Match</em> n'est pas sensible &agrave; la casse lors de la recherche.</p>
+<p><br /> Pensez &agrave; nommer chaque composants Winform d'apr&egrave;s le nom de votre projet.<br /> Ex: FrmMainProjet1, FrmSecondaireProjet1</p>
+<p>Sous Powershell la d&eacute;claration simultan&eacute;e des &eacute;v&eacute;nements <em>Activated</em> et <em>DeActivated</em>, r&eacute;alis&eacute;e pour VisualStudio, peut amener le formulaire "&agrave; boucler". Idem pour la d&eacute;claration de l'&eacute;v&eacute;nement <em>Paint</em>, de la d&eacute;claration des &eacute;v&eacute;nements de la souris, etc.<br /> Une gestion correcte du code de ces gestionnaires, en lieu et place d'un appel &agrave; MessageBox, r&eacute;glera le probl&egrave;me.</p>
+<p>Les ressources d'une form et/ou du projet sont prises en charge lors de la conversion.</p>
+<p>&nbsp;</p>
 </body>
 </html>

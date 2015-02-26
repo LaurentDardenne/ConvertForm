@@ -1,12 +1,9 @@
 ﻿#
 # Manifeste de module pour le module «Convert-Form»
-#
-# Généré le : 21/08/2014
-#
 @{
 	ModuleToProcess = 'ConvertForm.psm1'
 
-	ModuleVersion = '1.0'
+	ModuleVersion = '1.1'
  
 	GUID = '22ce828c-4a7c-4441-8881-7b2ff08bd895'
 	

@@ -1,6 +1,9 @@
 ﻿#PowerShell Form Converter
 
 Import-LocalizedData -BindingVariable ConvertFormMsgs -Filename ConvertFormLocalizedData.psd1 -EA Stop
+
+ #Création du header
+."$psScriptRoot\Tools\Add-Header.ps1"
  
  #On charge les méthodes de construction et d'analyse du fichier C#
 Import-Module "$psScriptRoot\Transform.psm1" -DisableNameChecking -Verbose:$false

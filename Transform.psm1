@@ -5,9 +5,6 @@
 
 Import-LocalizedData -BindingVariable TransformMsgs -Filename TransformLocalizedData.psd1 -EA Stop
 
- #Création du header
-."$psScriptRoot\Tools\Add-Header.ps1"
-
 function Convert-DictionnaryEntry($Parameters) 
 {   #Converti un DictionnaryEntry en une string "clé=valeur clé=valeur..." 
   "$($Parameters.GetEnumerator()|% {"$($_.key)=$($_.value)"})"

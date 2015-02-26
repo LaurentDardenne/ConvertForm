@@ -17,7 +17,9 @@ $Line
 `#  Author  :
 `#  Date    : $Date
 `#
-`#  Generated with PowerShell V$($PSVersionTable.PSVersion)
+ #  Generated with ConvertForm module version $( $Myinvocation.MyCommand.Module.Version)
+`#  PowerShell version $($PSVersionTable.PSVersion)
+`#
 `#  Invocation Line   : $InvocationLine
 `#  Source            : $SourceName
 $Line

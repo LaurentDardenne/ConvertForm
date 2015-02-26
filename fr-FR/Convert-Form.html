@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <title>Convert-Form</title>
@@ -13,235 +13,53 @@ ul.toc li.heading3 { margin-left: 2em; }
 </style>
 </head>
 <body>
+<p style="text-align:center;"> <img src="https://download-codeplex.sec.s-msft.com/Download?ProjectName=convertform&DownloadId=898560&Build=20959" alt="" /></p>
+
+<h1>Documentation Fran&ccedil;aise</h1>
 <p><strong>Convert-Form</strong></p>
-
-
-	<p style="text-align:center;"> <img src="http://add-lib.developpez.com/Wiki/Documentation/Convert-Form/images/Convert-Form-Icon.jpg" alt="" /></p>
-
-
-	<p>D’après une idée originale de Jean-Louis, Robin Lemesle et Arnaud Petitjean. La version d’origine a été publiée sur le site PowerShell-Scripting.com.</p>
-
-
-	<p>Je tiens à remercier <a href="http://sjrd.developpez.com/" class="external">Sébastien Doeraene</a> pour son aide sur les expressions régulières.</p>
-
-
-	<p>Testé avec PowerShell V1 sous Windows XP et PowerShell V2 sous Windows Seven RTM.</p>
-
-
-	<p>Cet ensemble de scripts permet de convertir les déclarations de création d’une WinForm C# en un script PowerShell. Le fichier source est un fichier xxx.Designer.cs, créé à l’aide de Visual Studio (toutes versions, 2005 ou 2008).</p>
-
-
-	<p>Vous pouvez télécharger la version gratuite de Visual C# 2008 Express SP1 ici: <a class="external" href="http://msdn.microsoft.com/fr-fr/express/aa975050.aspx">http://msdn.microsoft.com/fr-fr/express/aa975050.aspx</a></p>
-
-
-	<p><strong>Sommaire</strong></p>
-
-
-	<ul class="toc"><li class="heading2"><a href="#Installation-des-scripts">Installation des scripts</a></li>
-<li class="heading2"><a href="#Convertir-un-fichier-Winform">Convertir un fichier Winform</a></li>
-<li class="heading2"><a href="#Comment-répercuter-les-modifications-du-fichier-Designer">Comment répercuter les modifications du fichier Designer</a></li>
-<li class="heading3"><a href="#Code-couleur-des-messages-derreur">Code couleur des messages d'erreur</a></li>
-<li class="heading3"><a href="#Messages-d’erreur">Messages d’erreur</a></li>
-<li class="heading2"><a href="#Coder-les-événements-des-composants-graphiques">Coder les événements des composants graphiques</a></li>
-<li class="heading3"><a href="#Création-d’un-gestionnaire-d’événement">Création d’un gestionnaire d’événement</a></li>
-<li class="heading2"><a href="#Installer-le-cmdlet-Invoke-Apartment">Installer le cmdlet Invoke-Apartment</a></li>
+<p>D&rsquo;apr&egrave;s une id&eacute;e originale de Jean-Louis, Robin Lemesle et Arnaud Petitjean. La version d&rsquo;origine a &eacute;t&eacute; publi&eacute;e sur le site <a href="http://powershell-scripting.com/index.php?option=com_joomlaboard&amp;Itemid=76&amp;func=view&amp;id=2014&amp;catid=14#2014" target="_blank"> PowerShell-Scripting.com</a>.</p>
+<p>Je tiens &agrave; remercier <a href="http://sjrd.developpez.com/">S&eacute;bastien Doeraene</a> pour son aide sur les expressions r&eacute;guli&egrave;res.</p>
+<p>Test&eacute; avec PowerShell V4 sous Windows Seven x64 et Visual Studio 2010.</p>
+<p>Ce module permet de convertir les d&eacute;clarations de cr&eacute;ation d&rsquo;une WinForm C# en un script PowerShell. Le fichier source est un fichier xxx.Designer.cs, cr&eacute;&eacute; &agrave; l&rsquo;aide de Visual Studio (toutes versions).</p>
+<p>T&eacute;l&eacute;charger la version gratuite de <a href="https://www.microsoft.com/fr-fr/download/details.aspx?id=34673" target="_blank"> Visual Studio Express 2012 pour Windows Desktop</a>.</p>
+<p><strong>Sommaire</strong></p>
+<ul>
+<li><a href="#Installation-des-scripts">Installation du module</a></li>
+<li><a href="#Convertir-un-fichier-Winform">Convertir un fichier Winform</a></li>
+<li><a href="#Comment-r&eacute;percuter-les-modifications-du-fichier-Designer">Comment r&eacute;percuter les modifications du fichier Designer</a></li>
+<li><a href="#Coder-les-&eacute;v&eacute;nements-des-composants-graphiques">Coder les &eacute;v&eacute;nements des composants graphiques</a></li>
+<li><a href="#Cr&eacute;ation-d&rsquo;un-gestionnaire-d&rsquo;&eacute;v&eacute;nement">Cr&eacute;ation d&rsquo;un gestionnaire d&rsquo;&eacute;v&eacute;nement</a></li>
 </ul>
-
-
-	<h2 id="Installation-des-scripts">Installation des scripts<a href="#Installation-des-scripts" class="wiki-anchor">&para;</a></h2>
-
-
-	<p>Soit vous utilisez la distribution du projet Add-Lib, soit vous recopiez uniquement les fichiers du répertoire ...\PowerShell\Add-Lib\Scripts\Convert-Form vers un répertoire de votre choix, dans ce cas recopier y également le script <a href="PackageScripts.html" class="wiki-page">PackageScripts</a>.</p>
-
-
-Pour afficher le détail des paramètres du script Convert-Form.ps1 :<br />
-<pre>
-.\Convert-From|more
+<h2>&nbsp;</h2>
+<h2 id="Installation-des-scripts">Installation du module</h2>
+<p>Recopiez les fichiers dans un de vos r&eacute;pertoires de Module.</p>
+<h2 id="Convertir-un-fichier-Winform">Convertir un fichier Winform</h2>
+<p>Une fois le module ConvertForm charg&eacute;, vous pouvez :<br /> -soit vous placez dans le r&eacute;pertoire du projet Winform</p>
+<pre>cd C:\VisualStudioPath\ProjetPath
+Convert-Form Form1.Designer.cs Form1.ps1
 </pre>
-
-	<h2 id="Convertir-un-fichier-Winform">Convertir un fichier Winform<a href="#Convertir-un-fichier-Winform" class="wiki-anchor">&para;</a></h2>
-
-
-Pour exécuter le script dans une console PowerShell, vous pouvez <br />
--soit vous vous placez dans le répertoire du projet Winform <br />
-<pre>
-cd C:\VisualStudioPath\ProjetPath
-.\Convert-Form Form1.Designer.cs Form1.ps1
-</pre>Si vous précisez les deux noms  de fichier le premier référence le fichier de la Form, le second le fichier .PS1 généré.<br />
--soit vous vous placez dans le répertoire dans lequel vous souhaitez crée le fichier <br />
-cd C:\temp\test<br />
-.\Convert-Form C:\VSPath\ProjetPath\Form1.Designer.cs Form1.ps1<br />
-Pour afficher le détail des paramètres du script Convert-Form.ps1<br />
-<pre>
-.\Convert-Form|More
+<p>&nbsp;Si vous pr&eacute;cisez les deux noms de fichier le premier r&eacute;f&eacute;rence le fichier de la Form, le second le fichier .PS1&nbsp;&nbsp; g&eacute;n&eacute;r&eacute;.</p>
+<p>-soit vous placez dans le r&eacute;pertoire dans lequel vous souhaitez cr&eacute;e le fichier <br /> cd C:\temp\test<br /> Convert-Form C:\VisualStudioPath\ProjetPath\Form1.Designer.cs Form1.ps1</p>
+<p>&nbsp;Une fois le script g&eacute;n&eacute;r&eacute; (Form1.ps1), ex&eacute;cutez-le et corrigez les erreurs &eacute;ventuelles. Il peut y en avoir, car bien que de nombreux objets graphiques soient support&eacute;s tous les cas d&rsquo;utilisation de leurs propri&eacute;t&eacute;s n&rsquo;ont pas &eacute;t&eacute; test&eacute;s. La syntaxe du script est v&eacute;rifi&eacute;e lors de la cr&eacute;ation, mais elle ne garantit pas l&rsquo;ex&eacute;cution correcte du script.</p>
+<h2 id="Comment-r&eacute;percuter-les-modifications-du-fichier-Designer">Comment r&eacute;percuter les modifications du fichier Designer</h2>
+<p>Un projet Winform ne se cr&eacute;e pas en une seule op&eacute;ration, dans le cas o&ugrave; vous modifiez votre projet Winform vous serez amen&eacute; &agrave; r&eacute;g&eacute;n&eacute;rer un script PowerShell.</p>
+<p><br /> Le probl&egrave;me maintenant est de reporter les modifications de ce nouveau script dans l'ancien script, pour ce faire l'outil gratuit WinMerge vous facilitera la t&acirc;che.</p>
+<p>Pensez toutefois &agrave; pr&eacute;ciser un nouveau nom diff&eacute;rent de script de l&rsquo;ancien et &agrave; ne pas utiliser le param&egrave;tre <em>&ndash;Force</em> qui remplace le fichier existant sans demander de confirmation.</p>
+<p>Par exemple la recopie d&rsquo;&eacute;cran suivante affiche la diff&eacute;rence entre les deux versions d&rsquo;un script utilisant le m&ecirc;me projet Winform. Les nouvelles lignes concernant l&rsquo;ajout d&rsquo;un nouveau bouton peuvent facilement &ecirc;tre r&eacute;percut&eacute;es du nouveau script vers l&rsquo;ancien.</p>
+<p style="text-align: center;"><img src="http://add-lib.developpez.com/Wiki/Documentation/Convert-Form/images/Convert-Form-Winmerge.jpg" alt="" /></p>
+<h2 id="Coder-les-&eacute;v&eacute;nements-des-composants-graphiques">Coder les &eacute;v&eacute;nements des composants graphiques</h2>
+<h3 id="Cr&eacute;ation-d&rsquo;un-gestionnaire-d&rsquo;&eacute;v&eacute;nement">Cr&eacute;ation d&rsquo;un gestionnaire d&rsquo;&eacute;v&eacute;nement</h3>
+<p>Voici la d&eacute;claration de la signature d&rsquo;une fonction g&eacute;rant un &eacute;v&eacute;nement d&rsquo;une WinForm :</p>
+<pre>function OnFormClosing_Form1()
 </pre>
-
-	<p>Une fois le script généré (Form1.ps1), exécutez-le et corrigez les erreurs éventuelles. Il peut y en avoir, car bien que de nombreux objets graphiques soient supportés tous les cas d’utilisation de leurs propriétés n’ont pas été testés.  La syntaxe du script est vérifiée lors de la création, mais elle ne garantit pas l’exécution correcte du script.</p>
-
-
-	<h2 id="Comment-répercuter-les-modifications-du-fichier-Designer">Comment répercuter les modifications du fichier Designer<a href="#Comment-répercuter-les-modifications-du-fichier-Designer" class="wiki-anchor">&para;</a></h2>
-
-
-	<p>Un projet Winform ne se crée pas en une seule opération, dans le cas où vous modifierez votre projet Winform vous serez amené à régénérer un script PowerShell.<br />
-Le problème maintenant est de reporter les modifications de ce nouveau script dans l'ancien script, pour ce faire l'outil gratuit WinMerge vous facilitera la tâche.<br />
-Pensez toutefois à ne pas utiliser le switch –Force ou à préciser un nouveau nom différent de script de l’ancien.<br />
-Par exemple la recopie d’écran suivante affiche la différence entre les deux versions d’un script utilisant le même projet Winform. Les nouvelles lignes concernant l’ajout d’un nouveau bouton peuvent facilement être répercutées du nouveau script vers l’ancien.</p>
-
-
-	<p style="text-align:center;"> <img src="http://add-lib.developpez.com/Wiki/Documentation/Convert-Form/images/Convert-Form-Winmerge.jpg" alt="" /></p>
-
-
-	<h3 id="Code-couleur-des-messages-derreur">Code couleur des messages d'erreur<a href="#Code-couleur-des-messages-derreur" class="wiki-anchor">&para;</a></h3>
-
-
-	<p style="text-align:center;"> <img src="http://add-lib.developpez.com/Wiki/Documentation/Convert-Form/images/Convert-Form-Erreurs.jpg" alt="" /></p>
-
-
-	<h3 id="Messages-d’erreur">Messages d’erreur<a href="#Messages-d’erreur" class="wiki-anchor">&para;</a></h3>
-
-
-Convert-Form.ps1
-	<table>
-		<tr>
-			<th>Message</th>
-			<th>Cause</th>
-		</tr>
-		<tr>
-			<td>Le fichier source n'existe pas</td>
-			<td>Le fichier form1.designer.cs  n’existe pas ou le chemin est erroné.</td>
-		</tr>
-		<tr>
-			<td>Un script secondaire, mais nécessaire est introuvable.</td>
-		</tr>
-		<tr>
-			<td>Opération abandonnée</td>
-			<td>Vous avez choisi de ne pas écraser le fichier destination existant.</td>
-		</tr>
-		<tr>
-			<td>Les méthodes de thread du composant BackgroundWorker ne peuvent fonctionner sous PowerShell V1.0</td>
-			<td>La form en cours de conversion contient un composant qui ne peut être supporté.</td>
-		</tr>
-		<tr>
-			<td>Le nom de la form est introuvable dans le fichier xxx. La conversion ne peut s'effectuer</td>
-			<td>Le fichier xx.designer.cs ne semble pas respecter la syntaxe attendue.</td>
-		</tr>
-	</table>
-
-
-
-
-PackageConvert-Form.ps1
-	<table>
-		<tr>
-			<th>Message</th>
-			<th>Cause</th>
-		</tr>
-		<tr>
-			<td>Le générateur de ressources est introuvable</td>
-			<td>Le programme ResGen.exe est introuvable.</td>
-		</tr>
-		<tr>
-			<td>Le fichier de ressources n'existe pas</td>
-			<td>Le fichier contenant les ressources utilisées par un composant est introuvable.</td>
-		</tr>
-		<tr>
-			<td>Suppression du fichier impossible</td>
-			<td>Un fichier de log existant ne peut être supprimé.</td>
-		</tr>
-		<tr>
-			<td>Erreur(xx) lors de la génération du fichier de ressources. Consultez le fichier de log</td>
-			<td>L’exécution du programme ResGen.exe a provoqué une erreur.</td>
-		</tr>
-		<tr>
-			<td>Cas imprévu</td>
-			<td>Erreur interne d’analyse, poster un message dans le forum.</td>
-		</tr>
-	</table>
-
-
-
-
-PackageScripts.ps1
-	<table>
-		<tr>
-			<th>Message</th>
-			<th>Cause</th>
-		</tr>
-		<tr>
-			<td>Xxxx  introuvables. Le traitement ne peut continuer</td>
-			<td>Un élément nécessaire à l’exécution du script est introuvable. Ce peut être un cmdlet, un script ou encore une fonction.</td>
-		</tr>
-		<tr>
-			<td>Le tableau contenant les noms d'éléments à rechercher ne peut être null ou vide</td>
-			<td>Erreur interne d’analyse, poster un message dans le forum.</td>
-		</tr>
-	</table>
-
-
-
-
-votreScriptDeDestination.ps1
-	<table>
-		<tr>
-			<th>Message</th>
-			<th>Cause</th>
-		</tr>
-		<tr>
-			<td>Le fichier suivant n'existe pas</td>
-			<td>Votre script utilise un fichier de ressources qui est introuvable.</td>
-		</tr>
-	</table>
-
-
-
-
-	<h2 id="Coder-les-événements-des-composants-graphiques">Coder les événements des composants graphiques<a href="#Coder-les-événements-des-composants-graphiques" class="wiki-anchor">&para;</a></h2>
-
-
-	<h3 id="Création-d’un-gestionnaire-d’événement">Création d’un gestionnaire d’événement<a href="#Création-d’un-gestionnaire-d’événement" class="wiki-anchor">&para;</a></h3>
-
-
-Voici la déclaration de la signature d’une fonction gérant un événement d’une WinForm :<br />
-<pre>
-function OnFormClosing_Form1()
-</pre><br />
-Dans la portée du code de la fonction le paramètre <strong>$this</strong> est égal au paramètre sender (object) du C#. Il référence l’objet déclenchant l’événement.<br />
-Le paramètre <strong>$_</strong> est égal au paramètre e (eventarg) du C#. Il contient des informations sur l’événement déclenché.<br />
-L’appel par le gestionnaire d’événement d’un composant, de la fonction gérant cet événement se fait de la manière suivante :<br />
-<pre>
-$Form1.Add_FormClosing( { OnFormClosing_Form1} )
-</pre><br />
-OnFormClosing_Form1 est le nom de la fonction à appeler. On ne renseigne aucun paramètre puisque PowerShell considère cette fonction comme respectant la signature du délégué de l’événement. <br />
-Dans la fonction OnFormClosing_Form1 la variable <strong>$this</strong>, sera égale à <em>$Form1</em> et la variable <strong>$_</strong> contiendra un objet descendant de la classe Eventargs.
-
-	<h2 id="Installer-le-cmdlet-Invoke-Apartment">Installer le cmdlet Invoke-Apartment<a href="#Installer-le-cmdlet-Invoke-Apartment" class="wiki-anchor">&para;</a></h2>
-
-
-	<p>Certains composants graphiques ne fonctionnent pas sous PowerShell, car celui-ci utilise le modèle de thread MTA. Une WinForm utilise par défaut le modèle de thread STA.<br />
-On doit donc modifier le modèle de thread de PowerShell à l’aide d’un cmdlet nommé <strong>Invoke-Apartment</strong>. Si vous utilisez les cmdlets du projet open source <a href="http://www.codeplex.com/Pscx" class="external">PSCX v1.2</a>, vous n’aurez pas besoin d’installer le cmdlet lié au projet Add-Lib.</p>
-
-
-Pour installer ce cmdlet, effectuer dans l'ordre les opérations suivantes :<br />
-<pre>
-Set-Alias installutil $env:windir\Microsoft.NET\Framework\v2.0.50727\installutil.exe
-Cd "$($AddLib.Root)\Applications\Cmdlets\Invoke-Apartment" 
-installutil PSInvokeApartment.dll
-Get-PSSnapin -registered
-Add-PSSnapin InvokeApartmentSample # à insérer dans le profile utilisateur
-Get-Command Invoke-Apartment
-
- #Usage
-[void][reflection.assembly]::loadwithpartialname("System.Windows.Forms")
-$Texte = invoke-apartment "STA" "[windows.forms.clipboard]::GetText()" 
- #Récupère une string
-$Texte
- #Récupère un tableau de string
-$ArrayString=$Texte.Split("`n")
-</pre><br />
-Le script de configuration du projet Add-Lib prend uniquement en charge le chargement du snapin.<br />
-voir le fichier : <br />
-<em>RépertoireD'installation\Add-Lib\Profile\Add-LibConfig.ps1</em>
-
-	<p><a href="Limites_et_composants_supportés.html" class="wiki-page">Limites et composants supportés</a></p>
+<p><br /> Dans la port&eacute;e du code de la fonction le param&egrave;tre <strong>$this</strong> est &eacute;gal au param&egrave;tre sender (object) du C#. Il r&eacute;f&eacute;rence l&rsquo;objet d&eacute;clenchant l&rsquo;&eacute;v&eacute;nement.</p>
+<p>Le param&egrave;tre <strong>$_</strong> est &eacute;gal au param&egrave;tre e (eventarg) du C#. Il contient des informations sur l&rsquo;&eacute;v&eacute;nement d&eacute;clench&eacute;.</p>
+<p><br /> L&rsquo;appel par le gestionnaire d&rsquo;&eacute;v&eacute;nement d&rsquo;un composant, de la fonction g&eacute;rant cet &eacute;v&eacute;nement se fait de la mani&egrave;re suivante :</p>
+<pre>$Form1.Add_FormClosing( { OnFormClosing_Form1} )
+</pre>
+<p><br /> <em>OnFormClosing_Form1</em> est le nom de la fonction &agrave; appeler. On ne renseigne aucun param&egrave;tre puisque PowerShell consid&egrave;re cette fonction comme respectant la signature du d&eacute;l&eacute;gu&eacute; de l&rsquo;&eacute;v&eacute;nement.</p>
+<p><br /> Dans la fonction OnFormClosing_Form1 la variable <strong>$this</strong>, sera &eacute;gale &agrave; <em>$Form1</em> et la variable <strong>$_</strong> contiendra un objet descendant de la classe Eventargs.</p>
+<p><a href="https://convertform.codeplex.com/wikipage?title=Limites-composants-support%C3%A9s">Limites et composants support&eacute;s</a>.</p>
+<p><a href="Limites_et_composants_supportés.html" class="wiki-page">Limites et composants supportés</a></p>
 </body>
 </html>

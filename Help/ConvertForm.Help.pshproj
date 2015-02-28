@@ -33,6 +33,9 @@ Cet appel peut également générer les fichiers suivants :
 
 </Description>
         <Notes>Site web du projet ConvertForm : https://convertform.codeplex.com/
+
+Le code de création de l'entête du script généré, peut être modifié via le script Add-Header.ps1 présent dans le répertoire '\Tools' du module ConvertForm.
+
 </Notes>
         <InputType />
         <InputUrl />
@@ -70,7 +73,9 @@ Les caractères génériques sont autorisés.</Description>
           </Attributes>
           <Aliases />
           <Description>Spécifie le chemin d’accès du répertoire contenant le script généré. Les caractères génériques sont autorisés.
-Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
+Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.
+
+Ce paramètre supporte le 'delay-binding scriptblock', voir l'exemple numéro 2.</Description>
           <DefaultValue />
         </ParameterDescription>
         <ParameterDescription type="PSObject" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="true" isPos="false" pos="named" globbing="false">
@@ -83,7 +88,9 @@ Si ce paramètre n'est pas précisé, le répertoire de destination sera celui c
           <Description>Spécifie le chemin d’accès du répertoire contenant le script généré. Contrairement à Destination, la valeur de DestinationLiteral est utilisée exactement telle que vous la tapez. Aucun caractère n’est interprété en tant que caractère générique. 
 Si le chemin d’accès inclut des caractères d’échappement, mettez-le entre des guillemets simples. Les guillemets simples indiquent à Windows PowerShell qu’aucun caractère ne doit être interprété en tant que séquence d’échappement.
 
-Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.</Description>
+Si ce paramètre n'est pas précisé, le répertoire de destination sera celui contenant le fichier à convertir.
+
+Ce paramètre supporte le 'delay-binding scriptblock', voir l'exemple numéro 2.</Description>
           <DefaultValue />
         </ParameterDescription>
         <ParameterDescription type="String" varLen="false" required="false" dynamic="false" pipeRemaining="false" pipe="false" pipeProp="false" isPos="true" pos="1" globbing="false">
@@ -172,25 +179,31 @@ Si le paramètre -AsFunction est précisé, alors le nom de la fonction sera 'Ge
       <Examples>
         <Example>
           <Name>Example 1</Name>
-          <Cmd>$FormPath = "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
+          <Cmd>$FormPath = "$Home\Documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
 Convert-Form -Path $FormPath 
 </Cmd>
-          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
+          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
 
 Le script généré concerne un formulaire principal.</Description>
           <Output />
         </Example>
         <Example>
           <Name>Example 2</Name>
-          <Cmd>$FormPath = "$Home\Mes documents\Visual Studio 2008\Projects\MyForm\MyForm\Form1.Designer.cs"
+          <Cmd>$FormPath = "$Home\Documents\Visual Studio 2008\Projects\MyForm\MyForm\Form1.Designer.cs"
 md C:\Temp\MyForm
 Convert-Form -Path $FormPath -Destination C:\Temp\MyForm -Force
 
+Get-Item $FormPath|
+ Convert-Form  -Destination {Split-Path $_.DirectoryName -Parent} -Verbose
+
 </Cmd>
-          <Description>Converti le fichier Form1.Designer.cs en un script powershell 'C:\Temp\MyForm\Form1.ps1'.
+          <Description>Le premier appel converti le fichier Form1.Designer.cs en un script powershell 'Form1.ps1' dans le répertoire 'C:\Temp\MyForm'.
 La présence du paramètre -Force écrase le fichier s'il existe déjà.
 
-Le script généré concerne un formulaire principal.</Description>
+Le script généré concerne un formulaire principal.
+
+Le second appel converti le fichier Form1.Designer.cs dans le répertoire "$Home\Documents\Visual Studio 2008\Projects\MyForm". Cette technique est appelée 'delay-binding scriptblock'.
+</Description>
           <Output />
         </Example>
         <Example>
@@ -209,20 +222,53 @@ Le script généré concerne un formulaire principal.</Description>
         </Example>
         <Example>
           <Name>Example 4</Name>
-          <Cmd>$FormPath = "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
+          <Cmd>$FormPath = "$Home\Documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
+
+#Renommage
+Convert-Form -Path $FormPath -Passthru|
+ Rename-Item -New FrmMain.ps1 -Pass -verbose
+
+#Renommage et déplacement
+Convert-Form -Path $FormPath -Passthru|
+ Move-Item -Destination C:\Temp\FrmMain.ps1 -verbose
+
+#Création d'un backup
+Convert-Form -Path $FormPath -Passthru|
+Copy-Item -Destination {[System.IO.Path]::ChangeExtension($_.FullName,'.ps1.bak')} -verbose
+</Cmd>
+          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
+
+Le script généré concerne un formulaire principal. l'usage du paramètre -Passthru émet l'objet fichier correspondant au script .ps1 généré ce qui permet de le copier afin de crée un backup, de le renommer en l'incrémentant ou de le déplacer dans un autre répertoire.</Description>
+          <Output />
+        </Example>
+        <Example>
+          <Name>Example 5</Name>
+          <Cmd>$FormPath = "$Home\Documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
 Convert-Form -Path $FormPath -Secondary</Cmd>
-          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
+          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
 
 Le script ne contient pas le code chargement des assemblies, celui-ci se trouve dans le script d'un formulaire principal.
 Le script généré concerne donc un formulaire secondaire.</Description>
           <Output />
         </Example>
         <Example>
-          <Name>Example 5</Name>
+          <Name>Example 6</Name>
           <Cmd>Convert-Form Form1.Designer.cs -HideConsole </Cmd>
           <Description>Converti la form en lui ajoutant le code masquant la fenêtre de la console Powershell durant le temps d'exécution de la fenêtre.
 
 Le script généré concerne un formulaire principal.</Description>
+          <Output />
+        </Example>
+        <Example>
+          <Name>Example 7</Name>
+          <Cmd>$FormPath = "$Home\Documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
+Convert-Form -Path $FormPath 
+</Cmd>
+          <Description>Converti le fichier Form1.Designer.cs en un script powershell "$Home\Documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1".
+
+Le script généré concerne un formulaire principal. 
+Le code de déclaration et de création de la form est encapsulé dans une fonction nommée 'GeneratePrimaryForm'.
+Si vous utilisez le paramètre -Secondary alors le nom de la fonction sera 'GenerateSecondaryForm'.</Description>
           <Output />
         </Example>
       </Examples>

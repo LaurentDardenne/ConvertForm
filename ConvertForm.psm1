@@ -849,7 +849,7 @@ Function $FunctionName {
   If ($HideConsole)
   {
      Write-Debug "[Ajout de code] Show-Window"
-     [void]$LinesNewScript.Add('Show-Window')
+     [void]$LinesNewScript.Add('Show-Window `$MainWindowHandle')
   }
   
   if ( $asFunction )

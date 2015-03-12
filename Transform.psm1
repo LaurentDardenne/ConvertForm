@@ -71,7 +71,7 @@ function Add-SpecialEventForm{
  $CallHidefnct=""
    #On affiche la fenêtre, mais on cache la console 
  If ($HideConsole)
-  {$CallHidefnct="Hide-Window;"}
+  {$CallHidefnct="Hide-Window `$MainWindowHandle;"}
    #Replace au premier plan la fenêtre en l'activant.
    # Form1.topmost=$true est inopérant
  $Shown  = "`r`n`${0}.Add_Shown({{{1}`${0}.Activate()}})" -F $FormName,$CallHidefnct
@@ -501,19 +501,20 @@ Add-Type -MemberDefinition `$signature -Name 'Win32ShowWindowAsync' -Namespace W
 
 function Add-Win32FunctionsWrapper {
 @'
-function Show-Window([IntPtr] $WindowHandle=(Get-Process -Id $pid).MainWindowHandle){ 
+function Show-Window([IntPtr] $WindowHandle){ 
  #Displays in the foreground, the window with the handle $WindowHandle   
-   $SW_SHOWNORMAL = 1
-   $null=[Win32Functions.Win32ShowWindowAsync]::ShowWindowAsync($WindowHandle,$SW_SHOWNORMAL) 
+   $SW_SHOW = 5
+   $null=[Win32Functions.Win32ShowWindowAsync]::ShowWindowAsync($WindowHandle,$SW_SHOW) 
 }
 
-function Hide-Window([IntPtr] $WindowHandle=(Get-Process –id $pid).MainWindowHandle) {
+function Hide-Window([IntPtr] $WindowHandle) {
  #Hide the window with the handle WindowHandle
  #The application is no longer available in the taskbar and in the task manager.
    $SW_HIDE = 0
    $null=[Win32Functions.Win32ShowWindowAsync]::ShowWindowAsync($WindowHandle,$SW_HIDE)
 }
 
+$MainWindowHandle=(Get-Process -Id $pid).MainWindowHandle
 '@
 } #Add-Win32FunctionsWrapper
 

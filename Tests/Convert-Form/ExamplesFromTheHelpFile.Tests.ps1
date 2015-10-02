@@ -1,4 +1,6 @@
-﻿$Designer ="$($ConvertFormRepositoryLocation)\TestsWinform\Base\Form1.Designer.cs"
+﻿#todo nouveau exemples et usage du 'delay-binding scriptblock'
+
+$Designer ="$($ConvertFormRepositoryLocation)\TestsWinform\Base\Form1.Designer.cs"
 $DesignerLiteralpath ="$($ConvertForm.RepositoryLocation)\TestsWinform\Test21LiteralPath[AG]Naming\Frm[AG].Designer.cs"
 
 $ScriptFileForm="$($ConvertFormRepositoryLocation)\TestsWinform\Base\Form1.ps1"

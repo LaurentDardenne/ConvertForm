@@ -21,6 +21,8 @@ function Backup-Collection($Collection,$Message)
   }
 }
 
+#todo-Vnext ( C#6) : var name = "Dave";WriteLine($"My name is {name}");
+
 Function Add-LoadAssembly{
  param (
   [System.Collections.ArrayList] $Liste,

@@ -81,6 +81,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AddonISE", "AddonISE\AddonI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test23Resources", "Test23Resources\Test23Resources.csproj", "{4E9F45AC-5BA0-4417-A6D4-D528535CA4B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test24FileWatcher", "Test24FileWatcher\Test24FileWatcher.csproj", "{987E63A3-1E68-4660-BD89-4D4E76435180}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -469,6 +471,16 @@ Global
 		{4E9F45AC-5BA0-4417-A6D4-D528535CA4B8}.Release|Mixed Platforms.Build.0 = Release|x86
 		{4E9F45AC-5BA0-4417-A6D4-D528535CA4B8}.Release|x86.ActiveCfg = Release|x86
 		{4E9F45AC-5BA0-4417-A6D4-D528535CA4B8}.Release|x86.Build.0 = Release|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Debug|x86.ActiveCfg = Debug|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Debug|x86.Build.0 = Debug|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Release|Any CPU.ActiveCfg = Release|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Release|Mixed Platforms.Build.0 = Release|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Release|x86.ActiveCfg = Release|x86
+		{987E63A3-1E68-4660-BD89-4D4E76435180}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

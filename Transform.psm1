@@ -388,6 +388,11 @@ function New-ResourcesFile{
    #   http://blogs.msdn.com/b/visualstudio/archive/2010/06/18/resgen-exe-error-an-attempt-was-made-to-load-a-program-with-an-incorrect-format.aspx
    #        connect.microsoft.com/VisualStudio/feedback/details/532584/error-when-compiling-resx-file-seems-related-to-beta2-bug-5252020
    #  http://stackoverflow.com/questions/9190885/could-not-load-file-or-assembly-system-drawing-or-one-of-its-dependencies-erro
+   #   http://stackoverflow.com/questions/4899322/what-might-cause-a-resx-file-to-compile-correctly-under-windows-xp-but-fail-wi
+
+   # Bug resx dans VS2010 
+   #  error RG0000: Le type System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a 
+
 #<UNDEF %DEBUG%>     
   $Resgen="$psScriptRoot\ResGen.exe" 
   if ( !(Test-Path -LiteralPath $Resgen))

@@ -17,11 +17,7 @@
     Si dans Visual Studio vous déclarez des événements spécifiques pour chaque composant, ce script construira une fonction
     pour chacun de ces événements. Le code Csharp contenu dans le corps de la méthode n'est pas converti.  
     
-    L'usage de certains composants graphique nécessite le modèle de thread STA, celui-ci ne peut être modifié qu'à l'aide 
-    du cmdlet Invoke-Apartment, disponible dans la distribution de ce script ou avec le projet PSCX 1.2 et supérieure.
-    
-    Il est possible d'exécuter une fenêtre au sein d'un runspace. Pour plus de détails consultez le tutoriel 
-    "La notion de runspace sous PowerShell version 1" disponible le site http://laurent-dardenne.developpez.com/
+    L'usage de certains composants graphique nécessite le modèle de thread STA.
 
     Write-Host "`r`n Codes couleur :"
     Write-Host "`tInformation : Message d'information."
@@ -32,15 +28,11 @@
 
 
   SYSTEM REQUIREMENTS
-    Scripts :
-            PackageConvert-Form.ps1
-            PackageScripts.ps1
-            APIWindows.ps1   (-HideConsole)
-            New-Runspace.ps1 (-InvokeInRunspace)  
-                PackageWinform.ps1 (optionnel)
+    Module :
+            Transfomr.psm1
+
     Programme 
             Resgen.exe (SDK .NET)
-            PSInvokeApartment.dll (-STA) (cmdlet Invoke-Apartment nécessaire pour PowerShell  V1)
             Visual-Studio Express ou supèrieure (optionnel) 
     
   PARAMETERS
@@ -141,19 +133,6 @@
       Default value     False
       Accept pipeline?  False
       Accept wildcards? False			
-
-    -InvokeInRunspace <switch>
-      Indique l'insertion d'un code de création et d'initialisation d'un runspace, dans lequel on exécute l'appel à 
-      ShowDialog de la form déclarée dans le fichier généré.  
-      
-      Exemple de code généré :
-         $RSShowDialog=New-RunSpace {$Form1.ShowDialog()} $configurationRS
-        
-      Required?         False
-      Position?         named
-      Default value     False
-      Accept pipeline?  False
-      Accept wildcards? False
       
     -passThru <switch>
       Passe l'objet fichier récemment créé par ce script le long du pipeline. 
@@ -168,8 +147,6 @@
     -STA <switch>
       Autorise les composants nécessitant le modèle de thread STA.
       Dans ce cas on insère dans le script généré, un test de contrôle sur l'état de cloisonnement du thread courant.
-      Beta (en cours de test).
-      Nécessite sous PowerShell v1, la présence du cmdlet Invoke-Apartment.
       Nécessite sous PowerShell v2, d'exécuter PowerShell en précisant le switch -STA.
 
       Required?         False
@@ -183,18 +160,12 @@
     	
   RETURN TYPE
     System.IO.FileInfo, SI le switch -passThru est précisé, sinon ne renvoi aucune donnée. 
-	
-  ERROR MESSAGE
-   http://projets.developpez.com/wiki/add-lib/Convert-Form#Code-couleur-des-messages-derreur
-
-  NOTES
-  Site : http://projets.developpez.com/wiki/add-lib/Convert-Form 
     
 
     -------------------------- EXAMPLE 1 --------------------------
      #Précise des noms de chemin complet
     $PathOfForm ="$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.Designer.cs"
-    .\Convert-Form $PathOfForm C:\Temp\FrmTest.ps1 
+    Convert-Form $PathOfForm C:\Temp\FrmTest.ps1 
     
     -------------------------- EXAMPLE 2 --------------------------
      #Lit le fichier source et écrit le fichier cible dans le répertoire courant.
@@ -202,23 +173,15 @@
      #Le nom du fichier cible est égal à :
      # "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\Form1.ps1
     cd "$Home\Mes documents\Visual Studio 2008\Projects\MyForms\MyForms\ 
-    .\Convert-Form Form1.Designer.cs -Force
+    Convert-Form Form1.Designer.cs -Force
     
     -------------------------- EXAMPLE 3 --------------------------
      #Converti la form en lui ajoutant le code cachant la fenêtre de la console 
      # durant le temps d'exécution de la fenêtre.
      #On ajoute également l'appel au script APiWindows.ps1. 
-    .\Convert-Form Form1.Designer.cs FrmTest.ps1 -HideConsole -AddInitialize
+    Convert-Form Form1.Designer.cs FrmTest.ps1 -HideConsole -AddInitialize
 
     -------------------------- EXAMPLE 3 --------------------------
      #Autorise la conversion des composants utilisant le model de thread STA
-    .\Convert-Form Form1.Designer.cs FrmTest.ps1 -STA
+    Convert-Form Form1.Designer.cs FrmTest.ps1 -STA
 
-    -------------------------- EXAMPLE 4 --------------------------
-     #Génére l'appel à ShowDialog au sein d'un runspace.
-     #On émet le nom du fichier généré dans le pipeline afin de lui 
-     #ajouter une signature Authenticode 
-    .\Convert-Form Form1.Designer.cs FrmTest.ps1 -$InvokeInRunspace -Pass|Signe
-    
-    Afficher la documentaion page par page :
-     .\Convert-From|More

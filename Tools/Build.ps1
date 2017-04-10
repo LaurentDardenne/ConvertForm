@@ -5,12 +5,11 @@
      [Parameter(ParameterSetName="Release")]
    [switch] $Release
  ) 
-# Le profile utilisateur (Profile_DevCodePlex.Ps1) doit être chargé
 
 Set-Location $ConvertFormTools
 
 try {
- 'Psake','Psionic','DTW.PS.FileSystem'|
+ 'Psake','DTW.PS.FileSystem'|
  Foreach {
    $name=$_
    Import-Module $Name -EA stop -force
@@ -22,10 +21,5 @@ try {
 $Error.Clear()
 $Configuration=@{"Config"="$($PsCmdlet.ParameterSetName)"}
 Invoke-Psake .\Delivery.ps1 -parameters $Configuration -nologo
-
-if ($psake.build_success)
-{ 
- Invoke-Psake .\BuildZipAndSFX.ps1 -parameters $Configuration -nologo 
-}
  
 

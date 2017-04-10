@@ -1,43 +1,50 @@
-﻿#requires -version 3.0
+﻿Param (
+ # Specific to the development computer
+ [string] $VcsPathRepository=''
+) 
 
-#Write these line in the Windows PowerShell profile
-# ."$env:PsIonicProfile\Tools\Profile_DevCodePlex.Ps1"
-#Créez une variable d'environnement système nommée PsIonic pointant sur votre répertoire de travail
-#Puis modifiez les lignes indiquées comme spécfiques au poste de  développement
-
-$SM = [System.Environment+SpecialFolder]::MyDocuments
-$PSProfile="$([System.Environment]::GetFolderPath($SM))\WindowsPowerShell"
-$PSScripts=$PSProfile+"\Scripts"
-
-$PathRepository='G:\PS' # Spécifique au poste de développement
-$ProjectName='ConvertForm'
-
-$PsVersion=$PSVersionTable.PsVersion
-
-Set-Location "$PathRepository\$ProjectName\Tools"
-
-  #Pour cette hashtable on retarde la substitution, 
- #car on référence des clés de la hashtable 'primaire'
-$Paths=@{
- Bin='$($Properties.RepositoryLocation)\Bin'; #Debug et Release
- Livraison='C:\Temp\$ProjectName'; # Spécifique au poste de développement, n'est pas versionné. 
-                                   # On construit la livraison à partir du référentiel GIT
- Tests='$($Properties.RepositoryLocation)\Tests';
- Tools='$($Properties.RepositoryLocation)\Tools';
- Help='$($Properties.RepositoryLocation)\Documentation';
- Setup='$($Properties.RepositoryLocation)\Setup';
- Logs='C:\Temp\Logs\$ProjectName'   # Spécifique au poste de développement
+if (Test-Path env:APPVEYOR_BUILD_FOLDER)
+{
+  $VcsPathRepository=$env:APPVEYOR_BUILD_FOLDER
 }
 
-. .\New-ProjectVariable.ps1
+if (!(Test-Path $VcsPathRepository))
+{
+  Throw 'Configuration error, the variable $VcsPathRepository should be configured.'
+}
 
-$ConvertForm=New-ProjectVariable $ProjectName $PathRepository 'https://git01.codeplex.com/convertform' $Paths
-$ConvertForm.NewVariables() #Crée des variables constante d'après les clés de la hashtable $ConvertForm
+# Common variable for development computers
+if ( $null -eq [System.Environment]::GetEnvironmentVariable('ProfileConvertForm','User'))
+{ 
+ [Environment]::SetEnvironmentVariable('ProfileConvertForm',$VcsPathRepository, 'User')
+  #refresh the Powershell environment provider
+ $env:ProfileConvertForm=$VcsPathRepository 
+}
 
- #PSDrive sur le répertoire du projet 
-$null=New-PsDrive -Scope Global -Name $ConvertForm.ProjectName -PSProvider FileSystem -Root $ConvertFormRepositoryLocation 
+ # Specifics variables  to the development computer
+$ConvertFormDelivery= "$env:Temp\Delivery\ConvertForm"   
+$ConvertFormLogs= "$env:Temp\Logs\ConvertForm" 
+$ConvertFormDelivery, $ConvertFormLogs|
+ Foreach-Object {
+  if (-not (Test-Path $_))
+   { new-item $_ -ItemType Directory  > $null }         
+ }
 
-Write-Host "Projet $ProjectName - $PsVersion configuré." -Fore Green
+ # Commons variable for all development computers
+ # Their content is specific to the development computer 
+$ConvertFormBin= "$VcsPathRepository\Bin"
+$ConvertFormSrc= "$VcsPathRepository"
+$ConvertFormHelp= "$VcsPathRepository"
+$ConvertFormSetup= "$VcsPathRepository"
+$ConvertFormVcs= "$VcsPathRepository"
+$ConvertFormTests= "$VcsPathRepository\Tests"
+$ConvertFormTools= "$VcsPathRepository\Tools"
+$ConvertFormUrl='https://github.com/LaurentDardenne/ConvertForm' 
 
-rv SM,Paths,ProjectName,PathRepository
-Set-Location ..
+ #PSDrive to the project directory 
+$null=New-PsDrive -Scope Global -Name ConvertForm -PSProvider FileSystem -Root $ConvertFormVcs 
+
+Write-Host 'Settings of the variables of ConvertForm project.' -Fore Green
+
+rv VcsPathRepository
+

@@ -8,7 +8,7 @@ $Result=nuspec 'ConvertForm' $ModuleVersion {
         Authors='Dardenne Laurent'
         Owners='Dardenne Laurent'
         Description=@'
-Creation of ps1xml file dedicated to the extension methods contained in an assembly
+Converting a Winform file (xxx.Designer.cs) to a PowerShell script .ps1.
 '@
         title='ConvertForm module'
         summary='Converting a Winform file (xxx.Designer.cs) to a PowerShell script .ps1.'

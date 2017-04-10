@@ -17,6 +17,5 @@ obj
 obj/*
 httpd.parse.errors
 Thumbs.db
-/Tools/resgen-exe-error-an-attempt-was-made-to-load-a-program-with-an-incorrect-format.url
-/test.ps1
-/ConvertFormV2.ppr
+Localisation/*
+Todo/*

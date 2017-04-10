@@ -1,4 +1,8 @@
-﻿2014-09-06    Version 2.0.0
+﻿2017-04-10    Version 2.0.0
+     
+   Migration from Codeplex and refactoring build.ps1
+
+2014-09-06    Version 2.0.0
 
   Add xml help FR
   Add exception management

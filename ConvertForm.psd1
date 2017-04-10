@@ -3,7 +3,7 @@
 @{
 	ModuleToProcess = 'ConvertForm.psm1'
 
-	ModuleVersion = '1.1'
+	ModuleVersion = '2.0.0'
  
 	GUID = '22ce828c-4a7c-4441-8881-7b2ff08bd895'
 	
